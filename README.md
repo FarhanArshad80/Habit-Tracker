@@ -22,7 +22,7 @@ A habit tracker where every completed ritual lights up a point in a 14-day
 
 ## Getting started
 
-```bash
+```bash commands
 npm install
 npm run dev
 ```
