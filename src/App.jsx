@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useHabits } from './context/HabitContext';
 import StatsDashboard from './components/StatsDashboard';
+import DailyProgress from './components/DailyProgress';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import FocusTimer from './components/FocusTimer';
@@ -65,6 +66,9 @@ export default function App() {
           
           {/* Top Row: Metric Stats */}
           <StatsDashboard stats={globalStats} />
+
+          {/* Daily completion bar */}
+          <DailyProgress stats={globalStats} />
 
           {/* Your Rituals Section */}
           <section className="flex flex-col gap-5">
