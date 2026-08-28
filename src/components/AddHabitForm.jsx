@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import { HABIT_COLORS, HABIT_ICONS } from '../context/HabitContext';
+import { HABIT_COLORS, HABIT_ICONS, useHabits } from '../context/HabitContext';
 import { resolveIcon } from '../utils/iconMap';
 
 export default function AddHabitForm({ onAdd }) {
+  const { habits } = useHabits();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(HABIT_ICONS[0]);
@@ -28,6 +29,13 @@ export default function AddHabitForm({ onAdd }) {
     }
     if (trimmed.length > 40) {
       setError('Keep it under 40 characters.');
+      return;
+    }
+    const clash = habits.some(
+      (h) => h.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (clash) {
+      setError('You already track a ritual with that name.');
       return;
     }
     onAdd({ name: trimmed, icon, color, goal: Number(goal) });
