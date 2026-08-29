@@ -102,7 +102,9 @@ export default function HabitItem({ habit, onToggle, onDelete }) {
                     style={{
                       backgroundColor: done ? hex : 'rgba(139,147,167,0.22)',
                       boxShadow: done ? `0 0 8px ${hex}99` : 'none',
-                      ringColor: isToday(dateKey) ? hex : undefined,
+                      // Tailwind's ring color comes from this custom property;
+                      // a `ringColor` style key is not real CSS and is dropped.
+                      '--tw-ring-color': isToday(dateKey) ? hex : undefined,
                     }}
                   />
                   {i < trail.length - 1 && (
