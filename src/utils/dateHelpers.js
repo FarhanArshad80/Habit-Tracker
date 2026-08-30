@@ -29,6 +29,15 @@ export function getLastNDays(n, endKey = todayKey()) {
   return days;
 }
 
+// How many of the last `n` days (today included) were completed. Used to
+// measure a habit against its weekly goal on a rolling window, so the count
+// never resets to zero just because a calendar week rolled over.
+export function countCompletionsInLastNDays(completions, n) {
+  if (!completions || completions.length === 0) return 0;
+  const window = new Set(getLastNDays(n));
+  return completions.filter((dateKey) => window.has(dateKey)).length;
+}
+
 export function isToday(dateKey) {
   return dateKey === todayKey();
 }

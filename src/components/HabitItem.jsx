@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Trash2, Check } from 'lucide-react';
+import { Flame, Trash2, Check, Target } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
 import { getLastNDays, isToday, todayKey, formatFriendlyDate } from '../utils/dateHelpers';
@@ -48,6 +48,20 @@ export default function HabitItem({ habit, onToggle, onDelete }) {
               {habit.name}
             </h3>
             <div className="flex items-center gap-3 shrink-0">
+              {/* Weekly goal — the target picked when the ritual was created,
+                  measured over a rolling seven days. */}
+              <span
+                className="flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs font-medium"
+                style={
+                  habit.goalMet
+                    ? { color: hex, backgroundColor: `${hex}14` }
+                    : { color: '#8B93A7', backgroundColor: 'rgba(139,147,167,0.10)' }
+                }
+                title={`${habit.weeklyCount} of ${habit.weeklyGoal} completed in the last 7 days`}
+              >
+                {habit.goalMet && <Target className="h-3.5 w-3.5" strokeWidth={2} />}
+                {habit.weeklyCount}/{habit.weeklyGoal}
+              </span>
               <span
                 className="flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs font-medium"
                 style={{ color: hex, backgroundColor: `${hex}14` }}

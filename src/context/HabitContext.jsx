@@ -4,6 +4,7 @@ import {
   todayKey,
   calculateCurrentStreak,
   calculateBestStreak,
+  countCompletionsInLastNDays,
 } from '../utils/dateHelpers';
 
 const HabitContext = createContext(null);
@@ -69,13 +70,22 @@ export function HabitProvider({ children }) {
   }, [setHabits]);
 
   const habitsWithStats = useMemo(() => (
-    habits.map((h) => ({
-      ...h,
-      currentStreak: calculateCurrentStreak(h.completions),
-      bestStreak: calculateBestStreak(h.completions),
-      completedToday: h.completions.includes(todayKey()),
-      totalCompletions: h.completions.length,
-    }))
+    habits.map((h) => {
+      // Habits stored before the goal picker existed have no goal of their
+      // own; treat those as a daily ritual.
+      const weeklyGoal = h.goal > 0 ? h.goal : 7;
+      const weeklyCount = countCompletionsInLastNDays(h.completions, 7);
+      return {
+        ...h,
+        currentStreak: calculateCurrentStreak(h.completions),
+        bestStreak: calculateBestStreak(h.completions),
+        completedToday: h.completions.includes(todayKey()),
+        totalCompletions: h.completions.length,
+        weeklyGoal,
+        weeklyCount,
+        goalMet: weeklyCount >= weeklyGoal,
+      };
+    })
   ), [habits]);
 
   const globalStats = useMemo(() => {
