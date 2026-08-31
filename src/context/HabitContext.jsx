@@ -92,9 +92,10 @@ export function HabitProvider({ children }) {
     const total = habitsWithStats.length;
     const completedToday = habitsWithStats.filter((h) => h.completedToday).length;
     const bestStreak = habitsWithStats.reduce((max, h) => Math.max(max, h.bestStreak), 0);
+    const goalsMet = habitsWithStats.filter((h) => h.goalMet).length;
     const totalCompletions = habitsWithStats.reduce((sum, h) => sum + h.totalCompletions, 0);
     const completionRate = total === 0 ? 0 : Math.round((completedToday / total) * 100);
-    return { total, completedToday, bestStreak, totalCompletions, completionRate };
+    return { total, completedToday, bestStreak, totalCompletions, completionRate, goalsMet };
   }, [habitsWithStats]);
 
   const value = useMemo(() => ({

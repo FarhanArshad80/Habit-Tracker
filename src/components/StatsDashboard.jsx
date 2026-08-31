@@ -1,4 +1,4 @@
-import { Flame, Target, Trophy, Orbit } from 'lucide-react';
+import { Flame, Target, Trophy, CalendarCheck } from 'lucide-react';
 
 function StatCard({ icon: Icon, label, value, suffix, accent }) {
   return (
@@ -16,7 +16,7 @@ function StatCard({ icon: Icon, label, value, suffix, accent }) {
 }
 //
 export default function StatsDashboard({ stats }) {
-  const { total, completedToday, bestStreak, totalCompletions, completionRate } = stats;
+  const { total, completedToday, bestStreak, totalCompletions, completionRate, goalsMet } = stats;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -34,11 +34,13 @@ export default function StatsDashboard({ stats }) {
         suffix={bestStreak === 1 ? 'day' : 'days'}
         accent="#F2B705"
       />
+      {/* Weekly goals rather than a plain ritual count — the count is already
+          the denominator of the Today card. */}
       <StatCard
-        icon={Orbit}
-        label="Rituals"
-        value={total}
-        suffix={total === 1 ? 'active' : 'active'}
+        icon={CalendarCheck}
+        label="This week"
+        value={total === 0 ? '—' : `${goalsMet}/${total}`}
+        suffix={total === 0 ? '' : 'goals met'}
         accent="#A78BFA"
       />
       <StatCard
