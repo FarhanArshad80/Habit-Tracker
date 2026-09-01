@@ -62,6 +62,17 @@ export function HabitProvider({ children }) {
 
   const reorderHabits = useCallback((fromIndex, toIndex) => {
     setHabits((prev) => {
+      // A negative index would make splice count from the end and quietly
+      // move the ritual somewhere nobody asked for.
+      if (
+        fromIndex === toIndex ||
+        toIndex < 0 ||
+        toIndex >= prev.length ||
+        fromIndex < 0 ||
+        fromIndex >= prev.length
+      ) {
+        return prev;
+      }
       const next = [...prev];
       const [moved] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, moved);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Trash2, Check, Target } from 'lucide-react';
+import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
 import { getLastNDays, isToday, todayKey, formatFriendlyDate } from '../utils/dateHelpers';
@@ -10,7 +10,7 @@ function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
 
-export default function HabitItem({ habit, onToggle, onDelete }) {
+export default function HabitItem({ habit, index, total, onToggle, onDelete, onMove }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const Icon = resolveIcon(habit.icon);
   const hex = colorHex(habit.color);
@@ -70,6 +70,33 @@ export default function HabitItem({ habit, onToggle, onDelete }) {
                 <Flame className="h-3.5 w-3.5" strokeWidth={2} />
                 {habit.currentStreak}
               </span>
+              {/* Order is how the list is read every morning, so the ritual
+                  that matters most should be able to sit at the top. Shown
+                  with the delete control, and only when there is somewhere
+                  to move to. */}
+              {total > 1 && !confirmingDelete && (
+                <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => onMove(index, index - 1)}
+                    disabled={index === 0}
+                    aria-label={`Move "${habit.name}" up`}
+                    className="rounded-md p-1 text-ink-700 transition-colors hover:text-ink-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-ink-700"
+                  >
+                    <ChevronUp className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMove(index, index + 1)}
+                    disabled={index === total - 1}
+                    aria-label={`Move "${habit.name}" down`}
+                    className="rounded-md p-1 text-ink-700 transition-colors hover:text-ink-300 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-ink-700"
+                  >
+                    <ChevronDown className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                </div>
+              )}
+
               {confirmingDelete ? (
                 <div className="flex items-center gap-1.5 animate-rise">
                   <button

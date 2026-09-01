@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import HabitItem from './HabitItem';
 
-export default function HabitList({ habits, onToggle, onDelete }) {
+export default function HabitList({ habits, onToggle, onDelete, onMove }) {
   if (habits.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-void-400 bg-void-200/40 px-6 py-16 text-center animate-rise">
@@ -18,12 +18,15 @@ export default function HabitList({ habits, onToggle, onDelete }) {
 
   return (
     <ul className="flex flex-col gap-3">
-      {habits.map((habit) => (
+      {habits.map((habit, index) => (
         <HabitItem
           key={habit.id}
           habit={habit}
+          index={index}
+          total={habits.length}
           onToggle={onToggle}
           onDelete={onDelete}
+          onMove={onMove}
         />
       ))}
     </ul>
