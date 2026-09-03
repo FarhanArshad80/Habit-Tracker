@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown } from 'lucide-react';
+import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
 import { getLastNDays, isToday, todayKey, formatFriendlyDate } from '../utils/dateHelpers';
@@ -10,12 +10,53 @@ function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
 
-export default function HabitItem({ habit, index, total, onToggle, onDelete, onMove }) {
+export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draftName, setDraftName] = useState(habit.name);
+  const [draftGoal, setDraftGoal] = useState(habit.weeklyGoal);
+  const [editError, setEditError] = useState('');
   const Icon = resolveIcon(habit.icon);
   const hex = colorHex(habit.color);
   const trail = getLastNDays(TRAIL_LENGTH);
   const completedSet = new Set(habit.completions);
+
+  // The draft is seeded from whatever the ritual says right now, so an edit
+  // opened after a change elsewhere does not start from a stale value.
+  function startEditing() {
+    setDraftName(habit.name);
+    setDraftGoal(habit.weeklyGoal);
+    setEditError('');
+    setEditing(true);
+  }
+
+  function saveEdit(e) {
+    e.preventDefault();
+    const trimmed = draftName.trim();
+
+    if (!trimmed) {
+      setEditError('A ritual needs a name.');
+      return;
+    }
+    if (trimmed.length > 40) {
+      setEditError('Keep it under 40 characters.');
+      return;
+    }
+    // The same clash the add form rejects — except a ritual is allowed to
+    // keep the name it already has.
+    const clash = siblings.some(
+      (other) =>
+        other.id !== habit.id &&
+        other.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (clash) {
+      setEditError('You already track a ritual with that name.');
+      return;
+    }
+
+    onEdit(habit.id, { name: trimmed, goal: Number(draftGoal) });
+    setEditing(false);
+  }
 
   return (
     <li
@@ -44,10 +85,50 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <h3 className="truncate font-display text-base font-semibold text-ink-100">
-              {habit.name}
-            </h3>
-            <div className="flex items-center gap-3 shrink-0">
+            {editing ? (
+              <form onSubmit={saveEdit} className="flex w-full flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={draftName}
+                  onChange={(e) => { setDraftName(e.target.value); setEditError(''); }}
+                  maxLength={40}
+                  autoFocus
+                  aria-label="Ritual name"
+                  className="min-w-0 flex-1 rounded-lg border border-void-400 bg-void-100 px-3 py-1.5 font-display text-base text-ink-100 outline-none focus:border-gold/60"
+                />
+                <select
+                  value={draftGoal}
+                  onChange={(e) => setDraftGoal(e.target.value)}
+                  aria-label="Weekly goal"
+                  className="rounded-lg border border-void-400 bg-void-100 px-2 py-1.5 font-mono text-xs text-ink-100 outline-none focus:border-gold/60"
+                >
+                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <option key={n} value={n}>{n}x / week</option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  className="rounded-md bg-gold px-2.5 py-1.5 text-xs font-semibold text-void-100 hover:bg-gold-soft"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="rounded-md px-2 py-1.5 text-xs font-medium text-ink-500 hover:text-ink-300"
+                >
+                  Cancel
+                </button>
+                {editError && (
+                  <p className="w-full text-xs text-rose">{editError}</p>
+                )}
+              </form>
+            ) : (
+              <h3 className="truncate font-display text-base font-semibold text-ink-100">
+                {habit.name}
+              </h3>
+            )}
+            <div className={`flex items-center gap-3 shrink-0 ${editing ? 'hidden' : ''}`}>
               {/* Weekly goal — the target picked when the ritual was created,
                   measured over a rolling seven days. */}
               <span
@@ -115,14 +196,24 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                   </button>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirmingDelete(true)}
-                  aria-label={`Delete "${habit.name}"`}
-                  className="rounded-md p-1 text-ink-700 opacity-0 transition-opacity hover:text-rose group-hover:opacity-100 focus-visible:opacity-100"
-                >
-                  <Trash2 className="h-4 w-4" strokeWidth={1.75} />
-                </button>
+                <div className="flex items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={startEditing}
+                    aria-label={`Edit "${habit.name}"`}
+                    className="rounded-md p-1 text-ink-700 opacity-0 transition-opacity hover:text-gold group-hover:opacity-100 focus-visible:opacity-100"
+                  >
+                    <Pencil className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(true)}
+                    aria-label={`Delete "${habit.name}"`}
+                    className="rounded-md p-1 text-ink-700 opacity-0 transition-opacity hover:text-rose group-hover:opacity-100 focus-visible:opacity-100"
+                  >
+                    <Trash2 className="h-4 w-4" strokeWidth={1.75} />
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -45,6 +45,23 @@ export function HabitProvider({ children }) {
     return habit;
   }, [setHabits]);
 
+  // A ritual outlives the moment it was named. Renaming and re-targeting
+  // happen in place so the streak, the trail and every recorded completion
+  // survive the edit — the alternative was delete and start over, which
+  // throws away the history that makes the app worth opening.
+  const editHabit = useCallback((habitId, { name, goal }) => {
+    setHabits((prev) => prev.map((h) => {
+      if (h.id !== habitId) return h;
+      const trimmed = typeof name === 'string' ? name.trim() : h.name;
+      const nextGoal = Number(goal);
+      return {
+        ...h,
+        name: trimmed || h.name,
+        goal: nextGoal > 0 && nextGoal <= 7 ? nextGoal : h.goal,
+      };
+    }));
+  }, [setHabits]);
+
   const deleteHabit = useCallback((habitId) => {
     setHabits((prev) => prev.filter((h) => h.id !== habitId));
   }, [setHabits]);
@@ -113,10 +130,11 @@ export function HabitProvider({ children }) {
     habits: habitsWithStats,
     globalStats,
     addHabit,
+    editHabit,
     deleteHabit,
     toggleCompletion,
     reorderHabits,
-  }), [habitsWithStats, globalStats, addHabit, deleteHabit, toggleCompletion, reorderHabits]);
+  }), [habitsWithStats, globalStats, addHabit, editHabit, deleteHabit, toggleCompletion, reorderHabits]);
 
   return (
     <HabitContext.Provider value={value}>

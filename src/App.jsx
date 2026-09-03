@@ -8,7 +8,7 @@ import FocusTimer from './components/FocusTimer';
 import { formatFriendlyDate, todayKey } from './utils/dateHelpers';
 
 export default function App() {
-  const { habits, globalStats, addHabit, deleteHabit, toggleCompletion, reorderHabits } = useHabits();
+  const { habits, globalStats, addHabit, editHabit, deleteHabit, toggleCompletion, reorderHabits } = useHabits();
   const today = useMemo(() => formatFriendlyDate(todayKey()), []);
 
   return (
@@ -80,6 +80,7 @@ export default function App() {
               onToggle={toggleCompletion} 
               onDelete={deleteHabit} 
               onMove={reorderHabits}
+              onEdit={editHabit}
             />
             <AddHabitForm onAdd={addHabit} />
           </section>
