@@ -5,10 +5,14 @@ import DailyProgress from './components/DailyProgress';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import FocusTimer from './components/FocusTimer';
+import UndoBanner from './components/UndoBanner';
 import { formatFriendlyDate, todayKey } from './utils/dateHelpers';
 
 export default function App() {
-  const { habits, globalStats, addHabit, editHabit, deleteHabit, toggleCompletion, reorderHabits } = useHabits();
+  const {
+    habits, globalStats, recentlyDeleted, addHabit, editHabit, deleteHabit,
+    restoreHabit, dismissDeleted, toggleCompletion, reorderHabits,
+  } = useHabits();
   const today = useMemo(() => formatFriendlyDate(todayKey()), []);
 
   return (
@@ -104,6 +108,11 @@ export default function App() {
         </div>
       </main>
 
+      <UndoBanner
+        pending={recentlyDeleted}
+        onRestore={restoreHabit}
+        onDismiss={dismissDeleted}
+      />
     </div>
   );
 }

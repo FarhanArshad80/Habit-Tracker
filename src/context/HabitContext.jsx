@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useCallback } from 'react';
+import { createContext, useContext, useMemo, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import {
   todayKey,
@@ -30,6 +30,12 @@ function createId() {
 
 export function HabitProvider({ children }) {
   const [habits, setHabits] = useLocalStorage('constellation.habits', []);
+
+  // Deleting a ritual takes months of check-ins with it, and a confirm
+  // button is a poor last line of defence against a misread click. The
+  // removed ritual is held here — with the row it occupied — until the undo
+  // window closes.
+  const [recentlyDeleted, setRecentlyDeleted] = useState(null);
 
   const addHabit = useCallback(({ name, icon, color, goal }) => {
     const habit = {
@@ -63,8 +69,32 @@ export function HabitProvider({ children }) {
   }, [setHabits]);
 
   const deleteHabit = useCallback((habitId) => {
+    const index = habits.findIndex((h) => h.id === habitId);
+    if (index === -1) return;
+
+    setRecentlyDeleted({ habit: habits[index], index });
     setHabits((prev) => prev.filter((h) => h.id !== habitId));
-  }, [setHabits]);
+  }, [habits, setHabits]);
+
+  // Restored to the row it was deleted from rather than to the end, because
+  // the order of this list is how it gets read every morning.
+  const restoreHabit = useCallback(() => {
+    if (!recentlyDeleted) return;
+
+    const { habit, index } = recentlyDeleted;
+
+    setHabits((prev) => {
+      if (prev.some((h) => h.id === habit.id)) return prev;
+
+      const next = [...prev];
+      next.splice(Math.min(index, next.length), 0, habit);
+      return next;
+    });
+
+    setRecentlyDeleted(null);
+  }, [recentlyDeleted, setHabits]);
+
+  const dismissDeleted = useCallback(() => setRecentlyDeleted(null), []);
 
   const toggleCompletion = useCallback((habitId, dateKey = todayKey()) => {
     setHabits((prev) => prev.map((h) => {
@@ -129,12 +159,18 @@ export function HabitProvider({ children }) {
   const value = useMemo(() => ({
     habits: habitsWithStats,
     globalStats,
+    recentlyDeleted,
     addHabit,
     editHabit,
     deleteHabit,
+    restoreHabit,
+    dismissDeleted,
     toggleCompletion,
     reorderHabits,
-  }), [habitsWithStats, globalStats, addHabit, editHabit, deleteHabit, toggleCompletion, reorderHabits]);
+  }), [
+    habitsWithStats, globalStats, recentlyDeleted, addHabit, editHabit,
+    deleteHabit, restoreHabit, dismissDeleted, toggleCompletion, reorderHabits,
+  ]);
 
   return (
     <HabitContext.Provider value={value}>
