@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { createId } from '../utils/ids';
 import {
   todayKey,
   calculateCurrentStreak,
@@ -23,10 +24,6 @@ export const HABIT_ICONS = [
   'Heart', 'Flame', 'Music', 'Code2', 'Leaf', 'Coffee',
   'PenLine', 'Bike', 'Footprints', 'Sparkles',
 ];
-
-function createId() {
-  return `hb_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
 
 export function HabitProvider({ children }) {
   const [habits, setHabits] = useLocalStorage('constellation.habits', []);
@@ -95,6 +92,14 @@ export function HabitProvider({ children }) {
   }, [recentlyDeleted, setHabits]);
 
   const dismissDeleted = useCallback(() => setRecentlyDeleted(null), []);
+
+  // A restore replaces the whole board rather than merging into it: a backup
+  // is a picture of a moment, and half-merging one leaves a history that
+  // never actually happened.
+  const replaceHabits = useCallback((next) => {
+    setRecentlyDeleted(null);
+    setHabits(next);
+  }, [setHabits]);
 
   const toggleCompletion = useCallback((habitId, dateKey = todayKey()) => {
     setHabits((prev) => prev.map((h) => {
@@ -165,11 +170,13 @@ export function HabitProvider({ children }) {
     deleteHabit,
     restoreHabit,
     dismissDeleted,
+    replaceHabits,
     toggleCompletion,
     reorderHabits,
   }), [
     habitsWithStats, globalStats, recentlyDeleted, addHabit, editHabit,
-    deleteHabit, restoreHabit, dismissDeleted, toggleCompletion, reorderHabits,
+    deleteHabit, restoreHabit, dismissDeleted, replaceHabits, toggleCompletion,
+    reorderHabits,
   ]);
 
   return (

@@ -6,12 +6,13 @@ import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
+import DataControls from './components/DataControls';
 import { formatFriendlyDate, todayKey } from './utils/dateHelpers';
 
 export default function App() {
   const {
     habits, globalStats, recentlyDeleted, addHabit, editHabit, deleteHabit,
-    restoreHabit, dismissDeleted, toggleCompletion, reorderHabits,
+    restoreHabit, dismissDeleted, replaceHabits, toggleCompletion, reorderHabits,
   } = useHabits();
   const today = useMemo(() => formatFriendlyDate(todayKey()), []);
 
@@ -100,9 +101,18 @@ export default function App() {
             />
           </aside>
 
+          {/* Backup */}
+          <section className="flex flex-col gap-4 border-t border-slate-900 pt-8">
+            <h2 className="font-display text-xs font-bold uppercase tracking-wider text-slate-500">
+              Your data
+            </h2>
+            <DataControls habits={habits} onReplace={replaceHabits} />
+          </section>
+
           {/* Footer */}
           <footer className="pt-8 pb-4 text-center text-xs text-slate-700 border-t border-slate-900">
             Your data stays on this device — stored locally in your browser.
+            Clearing site data clears it too, so keep a backup.
           </footer>
 
         </div>
