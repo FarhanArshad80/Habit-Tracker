@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { HABIT_COLORS, HABIT_ICONS, useHabits } from '../context/HabitContext';
 import { resolveIcon } from '../utils/iconMap';
+import DayPicker from './DayPicker';
+import { ALL_DAYS } from '../utils/dateHelpers';
 
 export default function AddHabitForm({ onAdd }) {
   const { habits } = useHabits();
@@ -9,6 +11,7 @@ export default function AddHabitForm({ onAdd }) {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(HABIT_ICONS[0]);
   const [color, setColor] = useState(HABIT_COLORS[0].id);
+  const [days, setDays] = useState(ALL_DAYS);
   const [goal, setGoal] = useState(7);
   const [error, setError] = useState('');
 
@@ -16,8 +19,16 @@ export default function AddHabitForm({ onAdd }) {
     setName('');
     setIcon(HABIT_ICONS[0]);
     setColor(HABIT_COLORS[0].id);
+    setDays(ALL_DAYS);
     setGoal(7);
     setError('');
+  }
+
+  // Narrowing the schedule pulls an out-of-reach goal down with it, so the
+  // number in the box is always one the week can actually hold.
+  function chooseDays(next) {
+    setDays(next);
+    setGoal((current) => Math.min(Number(current), next.length));
   }
 
   function handleSubmit(e) {
@@ -38,7 +49,7 @@ export default function AddHabitForm({ onAdd }) {
       setError('You already track a ritual with that name.');
       return;
     }
-    onAdd({ name: trimmed, icon, color, goal: Number(goal) });
+    onAdd({ name: trimmed, icon, color, days, goal: Number(goal) });
     reset();
     setOpen(false);
   }
@@ -116,6 +127,18 @@ export default function AddHabitForm({ onAdd }) {
         </div>
       </div>
 
+      <div className="mt-4">
+        <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500">
+          Due on
+        </span>
+        <DayPicker days={days} onChange={chooseDays} idPrefix="new" />
+        <p className="mt-1.5 text-xs text-ink-700">
+          {days.length === 7
+            ? 'Every day.'
+            : `${days.length} days a week — the rest are rest days, and they won't break a streak.`}
+        </p>
+      </div>
+
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500">Color</span>
@@ -148,7 +171,7 @@ export default function AddHabitForm({ onAdd }) {
             onChange={(e) => setGoal(e.target.value)}
             className="rounded-lg border border-void-400 bg-void-100 px-3 py-2 text-sm text-ink-100 outline-none focus:border-gold/60"
           >
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            {Array.from({ length: days.length }, (_, i) => i + 1).map((n) => (
               <option key={n} value={n}>{n}x / week</option>
             ))}
           </select>

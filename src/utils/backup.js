@@ -1,7 +1,7 @@
 import { createId } from './ids';
-import { todayKey } from './dateHelpers';
+import { todayKey, normalizeSchedule } from './dateHelpers';
 
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,6 +24,7 @@ export function serializeHabits(habits) {
         name: h.name,
         icon: h.icon,
         color: h.color,
+        days: h.days,
         goal: h.weeklyGoal ?? h.goal,
         createdAt: h.createdAt,
         completions: h.completions,
@@ -44,6 +45,9 @@ function sanitizeHabit(raw, knownIcons, knownColors) {
   const name = typeof raw.name === 'string' ? raw.name.trim() : '';
   if (!name) return null;
 
+  // A version 1 backup carries no schedule at all, which reads as daily —
+  // exactly what those rituals were when the file was written.
+  const days = normalizeSchedule(raw.days);
   const goal = Number(raw.goal);
   const completions = Array.isArray(raw.completions)
     ? [...new Set(raw.completions.filter((d) => typeof d === 'string' && DATE_KEY.test(d)))].sort()
@@ -54,7 +58,8 @@ function sanitizeHabit(raw, knownIcons, knownColors) {
     name: name.slice(0, 40),
     icon: knownIcons.includes(raw.icon) ? raw.icon : knownIcons[0],
     color: knownColors.includes(raw.color) ? raw.color : knownColors[0],
-    goal: goal >= 1 && goal <= 7 ? Math.round(goal) : 7,
+    days,
+    goal: goal >= 1 && goal <= days.length ? Math.round(goal) : days.length,
     createdAt: typeof raw.createdAt === 'string' && DATE_KEY.test(raw.createdAt)
       ? raw.createdAt
       : todayKey(),

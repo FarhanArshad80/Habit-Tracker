@@ -1,9 +1,9 @@
 export default function DailyProgress({ stats }) {
-  const { total, completedToday, completionRate } = stats;
+  const { total, dueToday, completedToday, bonusToday, completionRate } = stats;
 
   if (total === 0) return null;
 
-  const isComplete = completedToday === total;
+  const isComplete = completedToday === dueToday;
 
   return (
     <div className="rounded-2xl border border-void-400/60 bg-void-200/70 p-4 shadow-card">
@@ -12,7 +12,9 @@ export default function DailyProgress({ stats }) {
           Today&apos;s progress
         </span>
         <span className="font-mono text-xs text-ink-300">
-          {completedToday} of {total} done
+          {dueToday === 0
+            ? `rest day${bonusToday > 0 ? ` · ${bonusToday} bonus` : ''}`
+            : `${completedToday} of ${dueToday} due`}
         </span>
       </div>
 
@@ -35,9 +37,11 @@ export default function DailyProgress({ stats }) {
       </div>
 
       <p className="mt-2 text-xs text-ink-500">
-        {isComplete
-          ? 'Every ritual checked off — see you tomorrow.'
-          : `${100 - completionRate}% left to close out the day.`}
+        {dueToday === 0
+          ? 'Nothing due today. Rest is part of the plan.'
+          : isComplete
+            ? 'Every ritual due today is checked off — see you tomorrow.'
+            : `${100 - completionRate}% left to close out the day.`}
       </p>
     </div>
   );

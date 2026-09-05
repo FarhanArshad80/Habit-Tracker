@@ -16,15 +16,20 @@ function StatCard({ icon: Icon, label, value, suffix, accent }) {
 }
 //
 export default function StatsDashboard({ stats }) {
-  const { total, completedToday, bestStreak, totalCompletions, completionRate, goalsMet } = stats;
+  const {
+    total, dueToday, completedToday, bestStreak, totalCompletions,
+    completionRate, goalsMet,
+  } = stats;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Measured against what is due, not everything tracked — a day where
+          nothing was scheduled is a rest day, not a 0%. */}
       <StatCard
         icon={Target}
         label="Today"
-        value={total === 0 ? '—' : `${completedToday}/${total}`}
-        suffix={total === 0 ? '' : `· ${completionRate}%`}
+        value={total === 0 ? '—' : dueToday === 0 ? 'Rest' : `${completedToday}/${dueToday}`}
+        suffix={total === 0 || dueToday === 0 ? '' : `· ${completionRate}%`}
         accent="#2DD4BF"
       />
       <StatCard

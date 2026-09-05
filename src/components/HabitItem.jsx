@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
-import { getLastNDays, isToday, todayKey, formatFriendlyDate } from '../utils/dateHelpers';
+import {
+  getLastNDays, isToday, todayKey, formatFriendlyDate, isScheduled,
+} from '../utils/dateHelpers';
+import DayPicker from './DayPicker';
 
 const TRAIL_LENGTH = 14;
 
@@ -15,6 +18,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(habit.name);
   const [draftGoal, setDraftGoal] = useState(habit.weeklyGoal);
+  const [draftDays, setDraftDays] = useState(habit.days);
   const [editError, setEditError] = useState('');
   const Icon = resolveIcon(habit.icon);
   const hex = colorHex(habit.color);
@@ -26,8 +30,14 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   function startEditing() {
     setDraftName(habit.name);
     setDraftGoal(habit.weeklyGoal);
+    setDraftDays(habit.days);
     setEditError('');
     setEditing(true);
+  }
+
+  function chooseDraftDays(next) {
+    setDraftDays(next);
+    setDraftGoal((current) => Math.min(Number(current), next.length));
   }
 
   function saveEdit(e) {
@@ -54,7 +64,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
       return;
     }
 
-    onEdit(habit.id, { name: trimmed, goal: Number(draftGoal) });
+    onEdit(habit.id, { name: trimmed, goal: Number(draftGoal), days: draftDays });
     setEditing(false);
   }
 
@@ -68,7 +78,10 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
           type="button"
           onClick={() => onToggle(habit.id, todayKey())}
           aria-pressed={habit.completedToday}
-          aria-label={`Mark "${habit.name}" ${habit.completedToday ? 'not done' : 'done'} for today`}
+          aria-label={`Mark "${habit.name}" ${habit.completedToday ? 'not done' : 'done'} for today${
+            habit.dueToday ? '' : ' — a rest day, so this is a bonus'
+          }`}
+          title={habit.dueToday ? undefined : 'Not due today — checking in is a bonus'}
           className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 active:scale-90"
           style={{
             borderColor: habit.completedToday ? hex : 'rgba(139,147,167,0.25)',
@@ -102,7 +115,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                   aria-label="Weekly goal"
                   className="rounded-lg border border-void-400 bg-void-100 px-2 py-1.5 font-mono text-xs text-ink-100 outline-none focus:border-gold/60"
                 >
-                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  {Array.from({ length: draftDays.length }, (_, i) => i + 1).map((n) => (
                     <option key={n} value={n}>{n}x / week</option>
                   ))}
                 </select>
@@ -119,6 +132,16 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                 >
                   Cancel
                 </button>
+                <div className="w-full">
+                  <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500">
+                    Due on
+                  </span>
+                  <DayPicker
+                    days={draftDays}
+                    onChange={chooseDraftDays}
+                    idPrefix={habit.id}
+                  />
+                </div>
                 {editError && (
                   <p className="w-full text-xs text-rose">{editError}</p>
                 )}
@@ -222,17 +245,28 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
           <div className="mt-3 flex items-center" role="group" aria-label="Last 14 days">
             {trail.map((dateKey, i) => {
               const done = completedSet.has(dateKey);
+              const due = isScheduled(dateKey, habit.days);
               const nextDone = i < trail.length - 1 && completedSet.has(trail[i + 1]);
               return (
                 <div key={dateKey} className="flex items-center" style={{ flex: i < trail.length - 1 ? 1 : 'none' }}>
                   <button
                     type="button"
                     onClick={() => onToggle(habit.id, dateKey)}
-                    title={formatFriendlyDate(dateKey)}
-                    aria-label={`${formatFriendlyDate(dateKey)}: ${done ? 'completed' : 'not completed'}`}
+                    title={`${formatFriendlyDate(dateKey)}${due ? '' : ' · rest day'}`}
+                    aria-label={`${formatFriendlyDate(dateKey)}: ${
+                      done ? 'completed' : due ? 'not completed' : 'rest day'
+                    }`}
                     className={`relative h-2.5 w-2.5 shrink-0 rounded-full transition-transform hover:scale-150 ${isToday(dateKey) ? 'ring-2 ring-offset-2 ring-offset-void-200' : ''}`}
                     style={{
-                      backgroundColor: done ? hex : 'rgba(139,147,167,0.22)',
+                      // A missed rest day is hollow rather than dim: dimming
+                      // reads as a fainter version of "missed", where nothing
+                      // was ever owed.
+                      backgroundColor: done ? hex : 'transparent',
+                      border: done
+                        ? 'none'
+                        : due
+                          ? '1px solid rgba(139,147,167,0.45)'
+                          : '1px dashed rgba(139,147,167,0.30)',
                       boxShadow: done ? `0 0 8px ${hex}99` : 'none',
                       // Tailwind's ring color comes from this custom property;
                       // a `ringColor` style key is not real CSS and is dropped.

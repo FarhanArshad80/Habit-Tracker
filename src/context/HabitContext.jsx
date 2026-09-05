@@ -6,6 +6,9 @@ import {
   calculateCurrentStreak,
   calculateBestStreak,
   countCompletionsInLastNDays,
+  normalizeSchedule,
+  isScheduled,
+  ALL_DAYS,
 } from '../utils/dateHelpers';
 
 const HabitContext = createContext(null);
@@ -18,6 +21,17 @@ export const HABIT_COLORS = [
   { id: 'sky', label: 'Sky', hex: '#38BDF8' },
   { id: 'lime', label: 'Lime', hex: '#A3E635' },
 ];
+
+// Rest days. A goal cannot ask for more sessions than there are days to hold
+// them, so the weekly target is clamped to the schedule wherever one is set.
+function clampGoal(goal, schedule) {
+  const asked = Number(goal);
+  const ceiling = schedule.length;
+
+  if (!(asked > 0)) return ceiling;
+
+  return Math.min(Math.round(asked), ceiling);
+}
 
 export const HABIT_ICONS = [
   'BookOpen', 'Dumbbell', 'Droplet', 'Moon', 'Sun', 'Brain',
@@ -34,13 +48,15 @@ export function HabitProvider({ children }) {
   // window closes.
   const [recentlyDeleted, setRecentlyDeleted] = useState(null);
 
-  const addHabit = useCallback(({ name, icon, color, goal }) => {
+  const addHabit = useCallback(({ name, icon, color, goal, days }) => {
+    const schedule = normalizeSchedule(days);
     const habit = {
       id: createId(),
       name: name.trim(),
       icon: icon || HABIT_ICONS[0],
       color: color || HABIT_COLORS[0].id,
-      goal: goal && goal > 0 ? goal : 7,
+      days: schedule,
+      goal: clampGoal(goal, schedule),
       createdAt: todayKey(),
       completions: [],
     };
@@ -52,15 +68,19 @@ export function HabitProvider({ children }) {
   // happen in place so the streak, the trail and every recorded completion
   // survive the edit — the alternative was delete and start over, which
   // throws away the history that makes the app worth opening.
-  const editHabit = useCallback((habitId, { name, goal }) => {
+  const editHabit = useCallback((habitId, { name, goal, days }) => {
     setHabits((prev) => prev.map((h) => {
       if (h.id !== habitId) return h;
       const trimmed = typeof name === 'string' ? name.trim() : h.name;
-      const nextGoal = Number(goal);
+      const schedule = normalizeSchedule(days === undefined ? h.days : days);
       return {
         ...h,
         name: trimmed || h.name,
-        goal: nextGoal > 0 && nextGoal <= 7 ? nextGoal : h.goal,
+        days: schedule,
+        // Dropping to three days a week has to drag a 7x goal down with it,
+        // or the ritual would be permanently short of a target it can no
+        // longer reach.
+        goal: clampGoal(goal === undefined ? h.goal : goal, schedule),
       };
     }));
   }, [setHabits]);
@@ -134,15 +154,18 @@ export function HabitProvider({ children }) {
 
   const habitsWithStats = useMemo(() => (
     habits.map((h) => {
-      // Habits stored before the goal picker existed have no goal of their
-      // own; treat those as a daily ritual.
-      const weeklyGoal = h.goal > 0 ? h.goal : 7;
+      // Habits stored before rest days existed carry no schedule, and ones
+      // stored before the goal picker carry no goal. Both read as daily.
+      const days = normalizeSchedule(h.days);
+      const weeklyGoal = h.goal > 0 ? Math.min(h.goal, days.length) : days.length;
       const weeklyCount = countCompletionsInLastNDays(h.completions, 7);
       return {
         ...h,
-        currentStreak: calculateCurrentStreak(h.completions),
-        bestStreak: calculateBestStreak(h.completions),
+        days,
+        currentStreak: calculateCurrentStreak(h.completions, days),
+        bestStreak: calculateBestStreak(h.completions, days),
         completedToday: h.completions.includes(todayKey()),
+        dueToday: isScheduled(todayKey(), days),
         totalCompletions: h.completions.length,
         weeklyGoal,
         weeklyCount,
@@ -153,16 +176,28 @@ export function HabitProvider({ children }) {
 
   const globalStats = useMemo(() => {
     const total = habitsWithStats.length;
-    const completedToday = habitsWithStats.filter((h) => h.completedToday).length;
+    // Only what is actually due counts toward closing out the day. Measuring
+    // against every tracked ritual would make a rest day look like a failure
+    // and leave the bar permanently short of full.
+    const due = habitsWithStats.filter((h) => h.dueToday);
+    const dueToday = due.length;
+    const completedToday = due.filter((h) => h.completedToday).length;
+    // A check-in on a rest day is still worth acknowledging, just not as
+    // part of the day's target.
+    const bonusToday = habitsWithStats.filter((h) => !h.dueToday && h.completedToday).length;
     const bestStreak = habitsWithStats.reduce((max, h) => Math.max(max, h.bestStreak), 0);
     const goalsMet = habitsWithStats.filter((h) => h.goalMet).length;
     const totalCompletions = habitsWithStats.reduce((sum, h) => sum + h.totalCompletions, 0);
-    const completionRate = total === 0 ? 0 : Math.round((completedToday / total) * 100);
-    return { total, completedToday, bestStreak, totalCompletions, completionRate, goalsMet };
+    const completionRate = dueToday === 0 ? 100 : Math.round((completedToday / dueToday) * 100);
+    return {
+      total, dueToday, completedToday, bonusToday, bestStreak,
+      totalCompletions, completionRate, goalsMet,
+    };
   }, [habitsWithStats]);
 
   const value = useMemo(() => ({
     habits: habitsWithStats,
+    allDays: ALL_DAYS,
     globalStats,
     recentlyDeleted,
     addHabit,
