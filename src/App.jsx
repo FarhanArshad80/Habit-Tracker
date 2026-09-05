@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useHabits } from './context/HabitContext';
 import StatsDashboard from './components/StatsDashboard';
 import DailyProgress from './components/DailyProgress';
+import ConsistencyGrid from './components/ConsistencyGrid';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import FocusTimer from './components/FocusTimer';
@@ -74,6 +75,9 @@ export default function App() {
 
           {/* Daily completion bar */}
           <DailyProgress stats={globalStats} />
+
+          {/* The season behind the day — three months of check-ins at a glance */}
+          <ConsistencyGrid habits={habits} />
 
           {/* Your Rituals Section */}
           <section className="flex flex-col gap-5">
