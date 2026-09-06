@@ -63,11 +63,18 @@ export default {
           '0%': { transform: 'translateY(8px)', opacity: 0 },
           '100%': { transform: 'translateY(0)', opacity: 1 },
         },
+        // Gentler than Tailwind's own `pulse`, which fades to half opacity
+        // and reads as something loading rather than something at stake.
+        'pulse-soft': {
+          '0%, 100%': { opacity: 1 },
+          '50%': { opacity: 0.55 },
+        },
       },
       animation: {
         twinkle: 'twinkle 3s ease-in-out infinite',
         'pop-in': 'pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1)',
         rise: 'rise 0.4s ease-out both',
+        'pulse-soft': 'pulse-soft 2.4s ease-in-out infinite',
       },
     },
   },

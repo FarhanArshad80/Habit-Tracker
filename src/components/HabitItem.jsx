@@ -166,10 +166,24 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                 {habit.goalMet && <Target className="h-3.5 w-3.5" strokeWidth={2} />}
                 {habit.weeklyCount}/{habit.weeklyGoal}
               </span>
+              {/* A streak with something to lose today is outlined rather
+                  than recoloured: the colour is the ritual's own and says
+                  which ritual this is, so the warning has to arrive as a
+                  ring around it instead of replacing it. */}
               <span
-                className="flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs font-medium"
-                style={{ color: hex, backgroundColor: `${hex}14` }}
-                title={`Best streak: ${habit.bestStreak} day${habit.bestStreak === 1 ? '' : 's'}`}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 font-mono text-xs font-medium ${
+                  habit.streakAtRisk ? 'ring-1 ring-inset animate-pulse-soft' : ''
+                }`}
+                style={{
+                  color: hex,
+                  backgroundColor: `${hex}14`,
+                  '--tw-ring-color': habit.streakAtRisk ? `${hex}99` : undefined,
+                }}
+                title={
+                  habit.streakAtRisk
+                    ? `${habit.currentStreak}-day streak — due today and not checked off yet`
+                    : `Best streak: ${habit.bestStreak} day${habit.bestStreak === 1 ? '' : 's'}`
+                }
               >
                 <Flame className="h-3.5 w-3.5" strokeWidth={2} />
                 {habit.currentStreak}

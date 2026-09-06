@@ -159,13 +159,24 @@ export function HabitProvider({ children }) {
       const days = normalizeSchedule(h.days);
       const weeklyGoal = h.goal > 0 ? Math.min(h.goal, days.length) : days.length;
       const weeklyCount = countCompletionsInLastNDays(h.completions, 7);
+      const currentStreak = calculateCurrentStreak(h.completions, days);
+      const completedToday = h.completions.includes(todayKey());
+      const dueToday = isScheduled(todayKey(), days);
+
       return {
         ...h,
         days,
-        currentStreak: calculateCurrentStreak(h.completions, days),
+        currentStreak,
         bestStreak: calculateBestStreak(h.completions, days),
-        completedToday: h.completions.includes(todayKey()),
-        dueToday: isScheduled(todayKey(), days),
+        completedToday,
+        dueToday,
+        // The one thing on this board where doing nothing costs something.
+        // Everything else is an opportunity missed; this is a run of days
+        // that ends at midnight unless someone acts before then.
+        //
+        // A streak of zero is not at risk — there is nothing to break — and
+        // neither is a rest day, where the schedule already said no.
+        streakAtRisk: dueToday && !completedToday && currentStreak > 0,
         totalCompletions: h.completions.length,
         weeklyGoal,
         weeklyCount,
@@ -186,12 +197,17 @@ export function HabitProvider({ children }) {
     // part of the day's target.
     const bonusToday = habitsWithStats.filter((h) => !h.dueToday && h.completedToday).length;
     const bestStreak = habitsWithStats.reduce((max, h) => Math.max(max, h.bestStreak), 0);
+    const atRisk = habitsWithStats.filter((h) => h.streakAtRisk);
+    // The longest of the runs on the line, because "you could lose 40 days"
+    // is a different sentence from "you could lose two".
+    const longestAtRisk = atRisk.reduce((max, h) => Math.max(max, h.currentStreak), 0);
     const goalsMet = habitsWithStats.filter((h) => h.goalMet).length;
     const totalCompletions = habitsWithStats.reduce((sum, h) => sum + h.totalCompletions, 0);
     const completionRate = dueToday === 0 ? 100 : Math.round((completedToday / dueToday) * 100);
     return {
       total, dueToday, completedToday, bonusToday, bestStreak,
       totalCompletions, completionRate, goalsMet,
+      atRisk: atRisk.length, longestAtRisk,
     };
   }, [habitsWithStats]);
 

@@ -1,5 +1,10 @@
+import { Flame } from 'lucide-react';
+
 export default function DailyProgress({ stats }) {
-  const { total, dueToday, completedToday, bonusToday, completionRate } = stats;
+  const {
+    total, dueToday, completedToday, bonusToday, completionRate,
+    atRisk, longestAtRisk,
+  } = stats;
 
   if (total === 0) return null;
 
@@ -43,6 +48,17 @@ export default function DailyProgress({ stats }) {
             ? 'Every ritual due today is checked off — see you tomorrow.'
             : `${100 - completionRate}% left to close out the day.`}
       </p>
+
+      {/* Below the percentage, not instead of it. A percentage says how much
+          is outstanding; this says what it costs to leave it that way. */}
+      {atRisk > 0 && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-gold">
+          <Flame className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+          {atRisk === 1
+            ? `A ${longestAtRisk}-day streak ends tonight unless it's checked off.`
+            : `${atRisk} streaks end tonight unless they're checked off — the longest is ${longestAtRisk} days.`}
+        </p>
+      )}
     </div>
   );
 }
