@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
 import {
@@ -13,7 +13,7 @@ function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
 
-export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit }) {
+export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit, onTogglePause }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(habit.name);
@@ -70,7 +70,9 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
 
   return (
     <li
-      className="group relative rounded-2xl border border-void-400/60 bg-void-200/70 p-4 sm:p-5 shadow-card transition-colors hover:border-void-500 animate-rise"
+      className={`group relative rounded-2xl border border-void-400/60 bg-void-200/70 p-4 sm:p-5 shadow-card transition-colors hover:border-void-500 animate-rise ${
+        habit.paused ? 'opacity-60 hover:opacity-100' : ''
+      }`}
     >
       <div className="flex items-start gap-4">
         {/* Icon + toggle for today */}
@@ -79,9 +81,19 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
           onClick={() => onToggle(habit.id, todayKey())}
           aria-pressed={habit.completedToday}
           aria-label={`Mark "${habit.name}" ${habit.completedToday ? 'not done' : 'done'} for today${
-            habit.dueToday ? '' : ' — a rest day, so this is a bonus'
+            habit.dueToday
+              ? ''
+              : habit.paused
+                ? ' — paused, so this is a bonus'
+                : ' — a rest day, so this is a bonus'
           }`}
-          title={habit.dueToday ? undefined : 'Not due today — checking in is a bonus'}
+          title={
+            habit.dueToday
+              ? undefined
+              : habit.paused
+                ? 'Paused — checking in still counts, it just is not owed'
+                : 'Not due today — checking in is a bonus'
+          }
           className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 active:scale-90"
           style={{
             borderColor: habit.completedToday ? hex : 'rgba(139,147,167,0.25)',
@@ -147,9 +159,18 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                 )}
               </form>
             ) : (
-              <h3 className="truncate font-display text-base font-semibold text-ink-100">
-                {habit.name}
-              </h3>
+              <div className="flex min-w-0 items-center gap-2">
+                <h3 className="truncate font-display text-base font-semibold text-ink-100">
+                  {habit.name}
+                </h3>
+                {/* Said in words, not just implied by the dimming — a faded
+                    row could as easily be a rendering quirk as a decision. */}
+                {habit.paused && (
+                  <span className="shrink-0 rounded-full bg-void-400/70 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-ink-500">
+                    Paused
+                  </span>
+                )}
+              </div>
             )}
             <div className={`flex items-center gap-3 shrink-0 ${editing ? 'hidden' : ''}`}>
               {/* Weekly goal — the target picked when the ritual was created,
@@ -234,6 +255,29 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                 </div>
               ) : (
                 <div className="flex items-center gap-0.5">
+                  {/* Shown at full strength while paused, unlike its
+                      neighbours: on a set-aside ritual, picking it back up is
+                      the only thing anyone is here to do. */}
+                  <button
+                    type="button"
+                    onClick={() => onTogglePause(habit.id)}
+                    aria-pressed={habit.paused}
+                    aria-label={`${habit.paused ? 'Resume' : 'Pause'} "${habit.name}"`}
+                    title={
+                      habit.paused
+                        ? 'Resume — due again from today'
+                        : 'Pause — set aside without losing the streak'
+                    }
+                    className={`rounded-md p-1 transition-opacity hover:text-gold focus-visible:opacity-100 ${
+                      habit.paused
+                        ? 'text-gold opacity-100'
+                        : 'text-ink-700 opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    {habit.paused
+                      ? <Play className="h-4 w-4" strokeWidth={1.75} />
+                      : <Pause className="h-4 w-4" strokeWidth={1.75} />}
+                  </button>
                   <button
                     type="button"
                     onClick={startEditing}

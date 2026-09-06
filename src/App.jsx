@@ -12,7 +12,7 @@ import { formatFriendlyDate, todayKey } from './utils/dateHelpers';
 
 export default function App() {
   const {
-    habits, globalStats, recentlyDeleted, addHabit, editHabit, deleteHabit,
+    habits, globalStats, recentlyDeleted, addHabit, editHabit, togglePause, deleteHabit,
     restoreHabit, dismissDeleted, replaceHabits, toggleCompletion, reorderHabits,
   } = useHabits();
   const today = useMemo(() => formatFriendlyDate(todayKey()), []);
@@ -90,6 +90,7 @@ export default function App() {
               onDelete={deleteHabit} 
               onMove={reorderHabits}
               onEdit={editHabit}
+              onTogglePause={togglePause}
             />
             <AddHabitForm onAdd={addHabit} />
           </section>

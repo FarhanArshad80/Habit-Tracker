@@ -17,7 +17,7 @@ function StatCard({ icon: Icon, label, value, suffix, accent }) {
 //
 export default function StatsDashboard({ stats }) {
   const {
-    total, dueToday, completedToday, bestStreak, totalCompletions,
+    total, activeTotal, dueToday, completedToday, bestStreak, totalCompletions,
     completionRate, goalsMet,
   } = stats;
 
@@ -44,8 +44,8 @@ export default function StatsDashboard({ stats }) {
       <StatCard
         icon={CalendarCheck}
         label="This week"
-        value={total === 0 ? '—' : `${goalsMet}/${total}`}
-        suffix={total === 0 ? '' : 'goals met'}
+        value={activeTotal === 0 ? '—' : `${goalsMet}/${activeTotal}`}
+        suffix={activeTotal === 0 ? '' : 'goals met'}
         accent="#A78BFA"
       />
       <StatCard

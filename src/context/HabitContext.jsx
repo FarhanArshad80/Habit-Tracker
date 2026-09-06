@@ -3,10 +3,13 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createId } from '../utils/ids';
 import {
   todayKey,
+  addDays,
   calculateCurrentStreak,
   calculateBestStreak,
   countCompletionsInLastNDays,
   normalizeSchedule,
+  normalizePauses,
+  isPausedOn,
   isScheduled,
   ALL_DAYS,
 } from '../utils/dateHelpers';
@@ -59,6 +62,7 @@ export function HabitProvider({ children }) {
       goal: clampGoal(goal, schedule),
       createdAt: todayKey(),
       completions: [],
+      pauses: [],
     };
     setHabits((prev) => [...prev, habit]);
     return habit;
@@ -81,6 +85,32 @@ export function HabitProvider({ children }) {
         // or the ritual would be permanently short of a target it can no
         // longer reach.
         goal: clampGoal(goal === undefined ? h.goal : goal, schedule),
+      };
+    }));
+  }, [setHabits]);
+
+  // Setting a ritual aside, and picking it back up. Until now the only way
+  // to stop a ritual counting against you was to delete it, which threw away
+  // every check-in behind it — so an injury, a holiday or a month where it
+  // simply is not the thing to be doing all cost the history too.
+  const togglePause = useCallback((habitId) => {
+    setHabits((prev) => prev.map((h) => {
+      if (h.id !== habitId) return h;
+
+      const pauses = normalizePauses(h.pauses);
+      const open = pauses.find((pause) => !pause.to);
+      const today = todayKey();
+
+      if (!open) return { ...h, pauses: [...pauses, { from: today, to: null }] };
+
+      // Resuming closes the range at yesterday, so today is owed again. A
+      // pause started and ended on the same day closes to before it opened,
+      // which reads as the no-op it was.
+      return {
+        ...h,
+        pauses: pauses.map((pause) =>
+          pause === open ? { ...pause, to: addDays(today, -1) } : pause
+        ),
       };
     }));
   }, [setHabits]);
@@ -157,17 +187,24 @@ export function HabitProvider({ children }) {
       // Habits stored before rest days existed carry no schedule, and ones
       // stored before the goal picker carry no goal. Both read as daily.
       const days = normalizeSchedule(h.days);
+      const pauses = normalizePauses(h.pauses);
       const weeklyGoal = h.goal > 0 ? Math.min(h.goal, days.length) : days.length;
       const weeklyCount = countCompletionsInLastNDays(h.completions, 7);
-      const currentStreak = calculateCurrentStreak(h.completions, days);
+      const currentStreak = calculateCurrentStreak(h.completions, days, pauses);
       const completedToday = h.completions.includes(todayKey());
-      const dueToday = isScheduled(todayKey(), days);
+      const paused = isPausedOn(todayKey(), pauses);
+      // A paused ritual is not due, which is the whole point of pausing it —
+      // and that alone keeps it out of the day's target, out of the at-risk
+      // count and out of the completion rate.
+      const dueToday = !paused && isScheduled(todayKey(), days);
 
       return {
         ...h,
         days,
+        pauses,
+        paused,
         currentStreak,
-        bestStreak: calculateBestStreak(h.completions, days),
+        bestStreak: calculateBestStreak(h.completions, days, pauses),
         completedToday,
         dueToday,
         // The one thing on this board where doing nothing costs something.
@@ -187,6 +224,10 @@ export function HabitProvider({ children }) {
 
   const globalStats = useMemo(() => {
     const total = habitsWithStats.length;
+    // Weekly goals are measured against what is actually being kept. A
+    // paused ritual can never meet its goal, so counting it would turn every
+    // pause into a permanent dent in the weekly score.
+    const active = habitsWithStats.filter((h) => !h.paused);
     // Only what is actually due counts toward closing out the day. Measuring
     // against every tracked ritual would make a rest day look like a failure
     // and leave the bar permanently short of full.
@@ -201,11 +242,13 @@ export function HabitProvider({ children }) {
     // The longest of the runs on the line, because "you could lose 40 days"
     // is a different sentence from "you could lose two".
     const longestAtRisk = atRisk.reduce((max, h) => Math.max(max, h.currentStreak), 0);
-    const goalsMet = habitsWithStats.filter((h) => h.goalMet).length;
+    const goalsMet = active.filter((h) => h.goalMet).length;
+    const paused = total - active.length;
     const totalCompletions = habitsWithStats.reduce((sum, h) => sum + h.totalCompletions, 0);
     const completionRate = dueToday === 0 ? 100 : Math.round((completedToday / dueToday) * 100);
     return {
-      total, dueToday, completedToday, bonusToday, bestStreak,
+      total, activeTotal: active.length, paused,
+      dueToday, completedToday, bonusToday, bestStreak,
       totalCompletions, completionRate, goalsMet,
       atRisk: atRisk.length, longestAtRisk,
     };
@@ -218,6 +261,7 @@ export function HabitProvider({ children }) {
     recentlyDeleted,
     addHabit,
     editHabit,
+    togglePause,
     deleteHabit,
     restoreHabit,
     dismissDeleted,
@@ -226,8 +270,8 @@ export function HabitProvider({ children }) {
     reorderHabits,
   }), [
     habitsWithStats, globalStats, recentlyDeleted, addHabit, editHabit,
-    deleteHabit, restoreHabit, dismissDeleted, replaceHabits, toggleCompletion,
-    reorderHabits,
+    togglePause, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
+    toggleCompletion, reorderHabits,
   ]);
 
   return (

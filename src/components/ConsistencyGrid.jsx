@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  todayKey, addDays, weekdayOf, isScheduled, formatFriendlyDate,
+  todayKey, addDays, weekdayOf, isScheduled, isPausedOn, formatFriendlyDate,
 } from '../utils/dateHelpers';
 
 const WEEKS = 12;
@@ -30,6 +30,9 @@ function scoreDay(habits, dateKey) {
 
   for (const habit of habits) {
     if (habit.createdAt && dateKey < habit.createdAt) continue;
+    // Pauses are dated, so the grid can be honest about them: a fortnight
+    // set aside reads as nothing due rather than as a fortnight of misses.
+    if (isPausedOn(dateKey, habit.pauses)) continue;
     if (!isScheduled(dateKey, habit.days)) continue;
 
     due += 1;

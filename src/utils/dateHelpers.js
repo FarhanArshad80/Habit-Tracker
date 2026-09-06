@@ -78,6 +78,56 @@ export function previousScheduledDay(dateKey, days) {
   return cursor;
 }
 
+// Pauses. A ritual set aside for a fortnight — an injury, a holiday, a month
+// where it simply is not the thing to be doing — was previously a choice
+// between watching a streak die and deleting the ritual outright.
+//
+// Each pause is a range of date keys with `to` left null while it is still
+// running. Days inside one stand exactly as rest days do: nothing was asked
+// for, so nothing was missed, and the run either side of it joins up.
+export function normalizePauses(pauses) {
+  if (!Array.isArray(pauses)) return [];
+
+  return pauses.filter(
+    (pause) =>
+      pause &&
+      typeof pause.from === 'string' &&
+      (pause.to === null || pause.to === undefined || typeof pause.to === 'string')
+  );
+}
+
+export function isPausedOn(dateKey, pauses) {
+  return normalizePauses(pauses).some(
+    (pause) => dateKey >= pause.from && (!pause.to || dateKey <= pause.to)
+  );
+}
+
+// Scheduled, and not set aside. This is the question everything that counts
+// a day should be asking.
+export function isDue(dateKey, days, pauses) {
+  return isScheduled(dateKey, days) && !isPausedOn(dateKey, pauses);
+}
+
+// The previous day the ritual was genuinely owed. Unlike the schedule-only
+// hop above this cannot promise to land within a week — a pause can run for
+// months — so it walks a bounded distance and gives up rather than spinning
+// if everything behind it turns out to be set aside.
+const DUE_LOOKBACK_LIMIT = 400;
+
+export function previousDueDay(dateKey, days, pauses = []) {
+  const schedule = normalizeSchedule(days);
+  let cursor = addDays(dateKey, -1);
+
+  for (let i = 0; i < DUE_LOOKBACK_LIMIT; i++) {
+    if (schedule.includes(weekdayOf(cursor)) && !isPausedOn(cursor, pauses)) {
+      return cursor;
+    }
+    cursor = addDays(cursor, -1);
+  }
+
+  return cursor;
+}
+
 export function isToday(dateKey) {
   return dateKey === todayKey();
 }
@@ -113,24 +163,24 @@ export function formatFriendlyDate(dateKey) {
 // "Consecutive" means consecutive *scheduled* days. A Monday-Wednesday-Friday
 // ritual keeps its streak over the weekend, because Saturday was never a day
 // it was meant to happen and a rest day is not a failure.
-export function calculateCurrentStreak(completions, days) {
+export function calculateCurrentStreak(completions, days, pauses = []) {
   if (!completions || completions.length === 0) return 0;
   const schedule = normalizeSchedule(days);
   const set = new Set(completions);
 
   // Start on the most recent day the ritual was actually expected.
   let cursor = todayKey();
-  if (!schedule.includes(weekdayOf(cursor))) {
-    cursor = previousScheduledDay(cursor, schedule);
+  if (!isDue(cursor, schedule, pauses)) {
+    cursor = previousDueDay(cursor, schedule, pauses);
   } else if (!set.has(cursor)) {
-    cursor = previousScheduledDay(cursor, schedule);
+    cursor = previousDueDay(cursor, schedule, pauses);
     if (!set.has(cursor)) return 0;
   }
 
   let streak = 0;
   while (set.has(cursor)) {
     streak += 1;
-    cursor = previousScheduledDay(cursor, schedule);
+    cursor = previousDueDay(cursor, schedule, pauses);
   }
   return streak;
 }
@@ -139,12 +189,12 @@ export function calculateCurrentStreak(completions, days) {
 // rest day are a bonus rather than part of the run — they were never asked
 // for, so counting them would make a streak mean two different things
 // depending on the day it happened to fall on.
-export function calculateBestStreak(completions, days) {
+export function calculateBestStreak(completions, days, pauses = []) {
   if (!completions || completions.length === 0) return 0;
   const schedule = normalizeSchedule(days);
 
   const sorted = [...new Set(completions)]
-    .filter((dateKey) => schedule.includes(weekdayOf(dateKey)))
+    .filter((dateKey) => isDue(dateKey, schedule, pauses))
     .sort();
 
   if (sorted.length === 0) return 0;
@@ -152,7 +202,7 @@ export function calculateBestStreak(completions, days) {
   let best = 1;
   let current = 1;
   for (let i = 1; i < sorted.length; i++) {
-    if (previousScheduledDay(sorted[i], schedule) === sorted[i - 1]) {
+    if (previousDueDay(sorted[i], schedule, pauses) === sorted[i - 1]) {
       current += 1;
     } else {
       current = 1;
