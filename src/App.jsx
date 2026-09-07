@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useHabits } from './context/HabitContext';
 import StatsDashboard from './components/StatsDashboard';
 import DailyProgress from './components/DailyProgress';
 import ConsistencyGrid from './components/ConsistencyGrid';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
+import HabitFilters, { habitFilter } from './components/HabitFilters';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
 import DataControls from './components/DataControls';
@@ -16,6 +17,14 @@ export default function App() {
     restoreHabit, dismissDeleted, replaceHabits, toggleCompletion, reorderHabits,
   } = useHabits();
   const today = useMemo(() => formatFriendlyDate(todayKey()), []);
+
+  // Which slice of the board is on screen. Past a handful of rituals the
+  // list stops being something you read and becomes something you scan, and
+  // "what is still owed today" is the question it is usually being scanned
+  // for.
+  const [filter, setFilter] = useState('all');
+  const view = habitFilter(filter);
+  const visible = useMemo(() => habits.filter(view.match), [habits, view]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col lg:flex-row overflow-x-hidden">
@@ -84,13 +93,16 @@ export default function App() {
             <h2 className="font-display text-xs font-bold uppercase tracking-wider text-slate-500">
               Your rituals
             </h2>
+            <HabitFilters habits={habits} active={filter} onChange={setFilter} />
             <HabitList 
-              habits={habits} 
+              habits={visible} 
               onToggle={toggleCompletion} 
               onDelete={deleteHabit} 
               onMove={reorderHabits}
               onEdit={editHabit}
               onTogglePause={togglePause}
+              reorderable={filter === 'all'}
+              emptyMessage={habits.length > 0 ? view.empty : undefined}
             />
             <AddHabitForm onAdd={addHabit} />
           </section>

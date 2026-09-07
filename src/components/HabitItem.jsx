@@ -13,7 +13,7 @@ function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
 
-export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit, onTogglePause }) {
+export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit, onTogglePause, reorderable = true }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(habit.name);
@@ -213,7 +213,11 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                   that matters most should be able to sit at the top. Shown
                   with the delete control, and only when there is somewhere
                   to move to. */}
-              {total > 1 && !confirmingDelete && (
+              {/* Hidden while a filter is on. The arrows move a ritual past
+                  its neighbour in the full list, and when the neighbour is
+                  one the filter is hiding, the row appears not to move at
+                  all - so the control is withdrawn rather than left to lie. */}
+              {reorderable && total > 1 && !confirmingDelete && (
                 <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                   <button
                     type="button"

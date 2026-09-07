@@ -1,8 +1,21 @@
 import { Sparkles } from 'lucide-react';
 import HabitItem from './HabitItem';
 
-export default function HabitList({ habits, onToggle, onDelete, onMove, onEdit, onTogglePause }) {
+export default function HabitList({
+  habits, onToggle, onDelete, onMove, onEdit, onTogglePause,
+  reorderable = true, emptyMessage,
+}) {
   if (habits.length === 0) {
+    // A filtered view that matches nothing is not an empty app, and telling
+    // someone with nine rituals to "add your first habit" is simply wrong.
+    if (emptyMessage) {
+      return (
+        <p className="rounded-2xl border border-dashed border-void-400 bg-void-200/40 px-6 py-10 text-center text-sm text-ink-500 animate-rise">
+          {emptyMessage}
+        </p>
+      );
+    }
+
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-void-400 bg-void-200/40 px-6 py-16 text-center animate-rise">
         <Sparkles className="h-8 w-8 text-gold/70" strokeWidth={1.5} />
@@ -30,6 +43,7 @@ export default function HabitList({ habits, onToggle, onDelete, onMove, onEdit, 
           onMove={onMove}
           onEdit={onEdit}
           onTogglePause={onTogglePause}
+          reorderable={reorderable}
         />
       ))}
     </ul>
