@@ -303,6 +303,19 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
             </div>
           </div>
 
+          {/* The number a streak cannot give you. A run says what is true
+              right now; this says what has been true for a month, and it is
+              the one that survives a missed Tuesday. Held back until there
+              are enough owed days behind it to mean something. */}
+          {habit.consistency && (
+            <p className="mt-2 font-mono text-[11px] text-ink-700">
+              <span style={{ color: hex }}>{habit.consistency.rate}%</span>
+              {' kept · '}
+              {habit.consistency.kept} of {habit.consistency.owed} days owed in
+              {' '}the last {habit.consistency.window}
+            </p>
+          )}
+
           {/* Constellation trail — last 14 nights */}
           <div className="mt-3 flex items-center" role="group" aria-label="Last 14 days">
             {trail.map((dateKey, i) => {

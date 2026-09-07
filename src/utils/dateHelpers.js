@@ -185,6 +185,46 @@ export function calculateCurrentStreak(completions, days, pauses = []) {
   return streak;
 }
 
+// How well a ritual has actually been kept lately, as a fraction of the days
+// it was genuinely owed on.
+//
+// A streak answers "am I on a run right now" and nothing else: one missed
+// Tuesday takes forty days down to zero, and a ritual kept nine times in ten
+// scores the same as one abandoned in March. This is the other half of the
+// picture - the one that survives a bad week.
+//
+// Rest days and pauses are not in the denominator. They were never asked for,
+// and counting them would make a four-day-a-week ritual cap out at 57%.
+export const CONSISTENCY_WINDOW = 30;
+
+// Below this there is not enough history for a percentage to mean anything -
+// one missed day out of three reads as 67% and sounds like a verdict.
+const CONSISTENCY_MINIMUM = 7;
+
+export function calculateConsistency(
+  completions, days, pauses = [], createdAt, window = CONSISTENCY_WINDOW
+) {
+  // Days before the ritual existed were never owed either. Counting them
+  // would open every new ritual on a number near zero that it had no chance
+  // of avoiding.
+  const owed = getLastNDays(window).filter(
+    (dateKey) =>
+      (!createdAt || dateKey >= createdAt) && isDue(dateKey, days, pauses)
+  );
+
+  if (owed.length < CONSISTENCY_MINIMUM) return null;
+
+  const set = new Set(completions || []);
+  const kept = owed.filter((dateKey) => set.has(dateKey)).length;
+
+  return {
+    kept,
+    owed: owed.length,
+    window,
+    rate: Math.round((kept / owed.length) * 100),
+  };
+}
+
 // Longest run of consecutive scheduled days ever recorded. Check-ins on a
 // rest day are a bonus rather than part of the run — they were never asked
 // for, so counting them would make a streak mean two different things
