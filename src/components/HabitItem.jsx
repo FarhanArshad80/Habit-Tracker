@@ -316,6 +316,21 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
             </p>
           )}
 
+          {/* Where the misses land. Held back unless one weekday is clearly
+              worse than the rest, because a ritual dropped evenly across the
+              week has nothing here to fix — and naming the lowest of six
+              near-identical days would invent a habit out of noise. */}
+          {habit.weakestDay && (
+            <p className="mt-1 font-mono text-[11px] text-ink-700">
+              {habit.weakestDay.name}s are the drop —{' '}
+              <span style={{ color: hex }}>
+                {habit.weakestDay.kept} of {habit.weakestDay.owed}
+              </span>
+              {' kept, against '}
+              {habit.weakestDay.restRate}% on the other days
+            </p>
+          )}
+
           {/* Constellation trail — last 14 nights */}
           <div className="mt-3 flex items-center" role="group" aria-label="Last 14 days">
             {trail.map((dateKey, i) => {

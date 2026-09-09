@@ -251,3 +251,84 @@ export function calculateBestStreak(completions, days, pauses = []) {
   }
   return best;
 }
+
+// Where the misses cluster. A consistency rate says a ritual is kept four
+// times in five; it does not say that the fifth is always a Monday. That is
+// the difference between "try harder" and something you can actually act on
+// — move the ritual, lower the target, or give Monday back as a rest day.
+//
+// Read over twelve weeks rather than the consistency window, because a
+// single weekday only comes round once a week and a month of history leaves
+// four data points to judge it on.
+export const WEEKDAY_NAMES = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+];
+
+export const WEAKEST_DAY_WINDOW = 84;
+
+// Fewer owed days than this behind a weekday and it is being judged on
+// noise: miss one of two Mondays and it reads as a 50% collapse.
+const WEAKEST_DAY_MINIMUM = 4;
+
+// How far below the ritual's other days a weekday has to sit before it is
+// worth naming. Everything drifts a little, and pointing at the lowest of
+// six near-identical numbers invents a pattern that is not there.
+const WEAKEST_DAY_MARGIN = 20;
+
+export function findWeakestWeekday(
+  completions, days, pauses = [], createdAt, window = WEAKEST_DAY_WINDOW
+) {
+  const schedule = normalizeSchedule(days);
+
+  // A ritual owed on one weekday has no weakest one — it has a consistency
+  // rate, which is already on the card.
+  if (schedule.length < 2) return null;
+
+  const set = new Set(completions || []);
+  const tally = new Map();
+
+  for (const dateKey of getLastNDays(window)) {
+    if (createdAt && dateKey < createdAt) continue;
+    if (!isDue(dateKey, schedule, pauses)) continue;
+
+    const weekday = weekdayOf(dateKey);
+    const row = tally.get(weekday) || { weekday, kept: 0, owed: 0 };
+    row.owed += 1;
+    if (set.has(dateKey)) row.kept += 1;
+    tally.set(weekday, row);
+  }
+
+  // Only weekdays with enough history to speak for themselves, and only if
+  // at least two of them qualify — a comparison needs something to compare.
+  const scored = [...tally.values()]
+    .filter((row) => row.owed >= WEAKEST_DAY_MINIMUM)
+    .map((row) => ({ ...row, rate: Math.round((row.kept / row.owed) * 100) }))
+    .sort((a, b) => a.rate - b.rate);
+
+  if (scored.length < 2) return null;
+
+  const worst = scored[0];
+
+  // A ritual kept every single time has no weak day, and saying one is
+  // "weakest" at 100% would be a warning about nothing.
+  if (worst.rate === 100) return null;
+
+  // Measured against the rest taken together rather than against the next
+  // worst day, so two equally bad Mondays and Tuesdays still register.
+  const rest = scored.slice(1);
+  const restOwed = rest.reduce((sum, row) => sum + row.owed, 0);
+  const restKept = rest.reduce((sum, row) => sum + row.kept, 0);
+  const restRate = Math.round((restKept / restOwed) * 100);
+
+  if (restRate - worst.rate < WEAKEST_DAY_MARGIN) return null;
+
+  return {
+    weekday: worst.weekday,
+    name: WEEKDAY_NAMES[worst.weekday],
+    kept: worst.kept,
+    owed: worst.owed,
+    rate: worst.rate,
+    restRate,
+    window,
+  };
+}

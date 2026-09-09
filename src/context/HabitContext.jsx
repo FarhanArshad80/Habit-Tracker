@@ -7,6 +7,7 @@ import {
   calculateCurrentStreak,
   calculateBestStreak,
   calculateConsistency,
+  findWeakestWeekday,
   countCompletionsInLastNDays,
   normalizeSchedule,
   normalizePauses,
@@ -208,6 +209,10 @@ export function HabitProvider({ children }) {
         bestStreak: calculateBestStreak(h.completions, days, pauses),
         // Null until there is enough history behind it to be worth a number.
         consistency: calculateConsistency(h.completions, days, pauses, h.createdAt),
+        // And where those missed days fall. Null unless one weekday is
+        // genuinely worse than the others — a pattern that is not there is
+        // worse than no pattern at all.
+        weakestDay: findWeakestWeekday(h.completions, days, pauses, h.createdAt),
         completedToday,
         dueToday,
         // The one thing on this board where doing nothing costs something.
