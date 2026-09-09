@@ -3,6 +3,7 @@ import { useHabits } from './context/HabitContext';
 import StatsDashboard from './components/StatsDashboard';
 import DailyProgress from './components/DailyProgress';
 import ConsistencyGrid from './components/ConsistencyGrid';
+import WeekAhead from './components/WeekAhead';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import HabitFilters, { habitFilter } from './components/HabitFilters';
@@ -84,6 +85,11 @@ export default function App() {
 
           {/* Daily completion bar */}
           <DailyProgress stats={globalStats} />
+
+          {/* What is coming, before the record of what has been. Today's bar
+              is above this and three months of history below it, so the page
+              reads forward from the day rather than only backward. */}
+          <WeekAhead habits={habits} />
 
           {/* The season behind the day — three months of check-ins at a glance */}
           <ConsistencyGrid habits={habits} />
