@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import {
-  todayKey, addDays, weekdayOf, isScheduled, isPausedOn, formatFriendlyDate,
+  addDays, weekdayOf, isScheduled, isPausedOn, formatFriendlyDate,
 } from '../utils/dateHelpers';
+import { useHabits } from '../context/HabitContext';
 
 const WEEKS = 12;
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -43,7 +44,9 @@ function scoreDay(habits, dateKey) {
 }
 
 export default function ConsistencyGrid({ habits }) {
-  const today = todayKey();
+  // The last column of the grid is today's week, so the grid has to learn
+  // about a new day at the same moment the rest of the board does.
+  const { today } = useHabits();
   const weeks = useMemo(() => buildWeeks(today), [today]);
 
   const scores = useMemo(() => {

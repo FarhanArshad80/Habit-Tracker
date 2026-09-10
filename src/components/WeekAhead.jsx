@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import {
-  addDays, todayKey, isDue, isToday, weekdayLabel, dayNumber, formatFriendlyDate,
+  addDays, isDue, weekdayLabel, dayNumber, formatFriendlyDate,
 } from '../utils/dateHelpers';
+import { useHabits } from '../context/HabitContext';
 
 // A week, starting today rather than on Monday. The question this answers is
 // "what is coming", and a calendar week that has already half gone spends
@@ -9,11 +10,13 @@ import {
 const SPAN = 7;
 
 export default function WeekAhead({ habits }) {
-  const days = useMemo(() => {
-    const start = todayKey();
+  // From the board rather than from the clock, so the strip starts on the
+  // same day everything else on the page is measured against.
+  const { today } = useHabits();
 
+  const days = useMemo(() => {
     return Array.from({ length: SPAN }, (_, step) => {
-      const dateKey = addDays(start, step);
+      const dateKey = addDays(today, step);
       // Rest days and pauses are already what `isDue` reads, so a ritual set
       // aside indefinitely stays out of every column ahead of it rather than
       // reappearing tomorrow.
@@ -21,7 +24,7 @@ export default function WeekAhead({ habits }) {
 
       return { dateKey, due };
     });
-  }, [habits]);
+  }, [habits, today]);
 
   // Nothing to plan around with a single ritual, and nothing to plan around
   // when every day asks for the same thing — which is what a board of daily
@@ -43,7 +46,7 @@ export default function WeekAhead({ habits }) {
         <span className="font-mono text-xs text-ink-500">
           heaviest is{' '}
           <span className="text-ink-300">
-            {isToday(days.find((day) => day.due.length === heaviest).dateKey)
+            {days.find((day) => day.due.length === heaviest).dateKey === today
               ? 'today'
               : formatFriendlyDate(
                   days.find((day) => day.due.length === heaviest).dateKey
@@ -57,7 +60,7 @@ export default function WeekAhead({ habits }) {
       <ol className="mt-3 flex items-end gap-1.5">
         {days.map(({ dateKey, due }) => {
           const share = heaviest === 0 ? 0 : (due.length / heaviest) * 100;
-          const today = isToday(dateKey);
+          const isToday = dateKey === today;
 
           return (
             <li key={dateKey} className="flex flex-1 flex-col items-center gap-1.5">
@@ -78,7 +81,7 @@ export default function WeekAhead({ habits }) {
               >
                 <div
                   className={`w-full rounded-md transition-all duration-500 ${
-                    today ? 'bg-gold/80' : 'bg-ink-700/50'
+                    isToday ? 'bg-gold/80' : 'bg-ink-700/50'
                   }`}
                   // A floor so a one-ritual day is still a column beside a
                   // five-ritual one instead of rounding away to nothing.
@@ -87,7 +90,7 @@ export default function WeekAhead({ habits }) {
               </div>
 
               <span
-                className={`font-mono text-[10px] ${today ? 'text-gold' : 'text-ink-700'}`}
+                className={`font-mono text-[10px] ${isToday ? 'text-gold' : 'text-ink-700'}`}
               >
                 {weekdayLabel(dateKey)}
                 <span className="ml-0.5 text-ink-700">{dayNumber(dateKey)}</span>

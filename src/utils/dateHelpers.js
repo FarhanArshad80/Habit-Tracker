@@ -21,6 +21,11 @@ export function addDays(dateKey, amount) {
 }
 
 // Returns an array of the last `n` date keys, oldest first, ending today.
+//
+// Every measurement below takes the end of its window as an argument rather
+// than reading the clock itself. The board holds one idea of what day it is -
+// one that survives midnight - and a helper consulting the system clock
+// halfway through a render could disagree with it.
 export function getLastNDays(n, endKey = todayKey()) {
   const days = [];
   for (let i = n - 1; i >= 0; i--) {
@@ -32,9 +37,9 @@ export function getLastNDays(n, endKey = todayKey()) {
 // How many of the last `n` days (today included) were completed. Used to
 // measure a habit against its weekly goal on a rolling window, so the count
 // never resets to zero just because a calendar week rolled over.
-export function countCompletionsInLastNDays(completions, n) {
+export function countCompletionsInLastNDays(completions, n, endKey = todayKey()) {
   if (!completions || completions.length === 0) return 0;
-  const window = new Set(getLastNDays(n));
+  const window = new Set(getLastNDays(n, endKey));
   return completions.filter((dateKey) => window.has(dateKey)).length;
 }
 
@@ -163,13 +168,13 @@ export function formatFriendlyDate(dateKey) {
 // "Consecutive" means consecutive *scheduled* days. A Monday-Wednesday-Friday
 // ritual keeps its streak over the weekend, because Saturday was never a day
 // it was meant to happen and a rest day is not a failure.
-export function calculateCurrentStreak(completions, days, pauses = []) {
+export function calculateCurrentStreak(completions, days, pauses = [], today = todayKey()) {
   if (!completions || completions.length === 0) return 0;
   const schedule = normalizeSchedule(days);
   const set = new Set(completions);
 
   // Start on the most recent day the ritual was actually expected.
-  let cursor = todayKey();
+  let cursor = today;
   if (!isDue(cursor, schedule, pauses)) {
     cursor = previousDueDay(cursor, schedule, pauses);
   } else if (!set.has(cursor)) {
@@ -202,12 +207,13 @@ export const CONSISTENCY_WINDOW = 30;
 const CONSISTENCY_MINIMUM = 7;
 
 export function calculateConsistency(
-  completions, days, pauses = [], createdAt, window = CONSISTENCY_WINDOW
+  completions, days, pauses = [], createdAt, window = CONSISTENCY_WINDOW,
+  today = todayKey()
 ) {
   // Days before the ritual existed were never owed either. Counting them
   // would open every new ritual on a number near zero that it had no chance
   // of avoiding.
-  const owed = getLastNDays(window).filter(
+  const owed = getLastNDays(window, today).filter(
     (dateKey) =>
       (!createdAt || dateKey >= createdAt) && isDue(dateKey, days, pauses)
   );
@@ -276,7 +282,8 @@ const WEAKEST_DAY_MINIMUM = 4;
 const WEAKEST_DAY_MARGIN = 20;
 
 export function findWeakestWeekday(
-  completions, days, pauses = [], createdAt, window = WEAKEST_DAY_WINDOW
+  completions, days, pauses = [], createdAt, window = WEAKEST_DAY_WINDOW,
+  today = todayKey()
 ) {
   const schedule = normalizeSchedule(days);
 
@@ -287,7 +294,7 @@ export function findWeakestWeekday(
   const set = new Set(completions || []);
   const tally = new Map();
 
-  for (const dateKey of getLastNDays(window)) {
+  for (const dateKey of getLastNDays(window, today)) {
     if (createdAt && dateKey < createdAt) continue;
     if (!isDue(dateKey, schedule, pauses)) continue;
 

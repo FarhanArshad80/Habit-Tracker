@@ -3,8 +3,9 @@ import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Pl
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
 import {
-  getLastNDays, isToday, todayKey, formatFriendlyDate, isScheduled,
+  getLastNDays, formatFriendlyDate, isScheduled,
 } from '../utils/dateHelpers';
+import { useHabits } from '../context/HabitContext';
 import DayPicker from './DayPicker';
 
 const TRAIL_LENGTH = 14;
@@ -20,9 +21,12 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   const [draftGoal, setDraftGoal] = useState(habit.weeklyGoal);
   const [draftDays, setDraftDays] = useState(habit.days);
   const [editError, setEditError] = useState('');
+  // The trail ends on the board's today, not on whatever the clock says
+  // during this particular render.
+  const { today } = useHabits();
   const Icon = resolveIcon(habit.icon);
   const hex = colorHex(habit.color);
-  const trail = getLastNDays(TRAIL_LENGTH);
+  const trail = getLastNDays(TRAIL_LENGTH, today);
   const completedSet = new Set(habit.completions);
 
   // The draft is seeded from whatever the ritual says right now, so an edit
@@ -78,7 +82,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
         {/* Icon + toggle for today */}
         <button
           type="button"
-          onClick={() => onToggle(habit.id, todayKey())}
+          onClick={() => onToggle(habit.id, today)}
           aria-pressed={habit.completedToday}
           aria-label={`Mark "${habit.name}" ${habit.completedToday ? 'not done' : 'done'} for today${
             habit.dueToday
@@ -346,7 +350,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                     aria-label={`${formatFriendlyDate(dateKey)}: ${
                       done ? 'completed' : due ? 'not completed' : 'rest day'
                     }`}
-                    className={`relative h-2.5 w-2.5 shrink-0 rounded-full transition-transform hover:scale-150 ${isToday(dateKey) ? 'ring-2 ring-offset-2 ring-offset-void-200' : ''}`}
+                    className={`relative h-2.5 w-2.5 shrink-0 rounded-full transition-transform hover:scale-150 ${dateKey === today ? 'ring-2 ring-offset-2 ring-offset-void-200' : ''}`}
                     style={{
                       // A missed rest day is hollow rather than dim: dimming
                       // reads as a fainter version of "missed", where nothing
@@ -360,7 +364,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                       boxShadow: done ? `0 0 8px ${hex}99` : 'none',
                       // Tailwind's ring color comes from this custom property;
                       // a `ringColor` style key is not real CSS and is dropped.
-                      '--tw-ring-color': isToday(dateKey) ? hex : undefined,
+                      '--tw-ring-color': dateKey === today ? hex : undefined,
                     }}
                   />
                   {i < trail.length - 1 && (

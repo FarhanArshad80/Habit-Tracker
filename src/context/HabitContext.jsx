@@ -1,8 +1,8 @@
 import { createContext, useContext, useMemo, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useToday } from '../hooks/useToday';
 import { createId } from '../utils/ids';
 import {
-  todayKey,
   addDays,
   calculateCurrentStreak,
   calculateBestStreak,
@@ -47,6 +47,13 @@ export const HABIT_ICONS = [
 export function HabitProvider({ children }) {
   const [habits, setHabits] = useLocalStorage('constellation.habits', []);
 
+  // Every number on this board is measured from today, and "today" was being
+  // read during render — which meant it only changed when something else
+  // did. A tab left open past midnight went on showing the previous day's
+  // streaks and trail until the next check-in happened to recompute them,
+  // and that check-in was recorded against a date the board was not showing.
+  const today = useToday();
+
   // Deleting a ritual takes months of check-ins with it, and a confirm
   // button is a poor last line of defence against a misread click. The
   // removed ritual is held here — with the row it occupied — until the undo
@@ -62,13 +69,13 @@ export function HabitProvider({ children }) {
       color: color || HABIT_COLORS[0].id,
       days: schedule,
       goal: clampGoal(goal, schedule),
-      createdAt: todayKey(),
+      createdAt: today,
       completions: [],
       pauses: [],
     };
     setHabits((prev) => [...prev, habit]);
     return habit;
-  }, [setHabits]);
+  }, [setHabits, today]);
 
   // A ritual outlives the moment it was named. Renaming and re-targeting
   // happen in place so the streak, the trail and every recorded completion
@@ -101,7 +108,6 @@ export function HabitProvider({ children }) {
 
       const pauses = normalizePauses(h.pauses);
       const open = pauses.find((pause) => !pause.to);
-      const today = todayKey();
 
       if (!open) return { ...h, pauses: [...pauses, { from: today, to: null }] };
 
@@ -115,7 +121,7 @@ export function HabitProvider({ children }) {
         ),
       };
     }));
-  }, [setHabits]);
+  }, [setHabits, today]);
 
   const deleteHabit = useCallback((habitId) => {
     const index = habits.findIndex((h) => h.id === habitId);
@@ -153,7 +159,7 @@ export function HabitProvider({ children }) {
     setHabits(next);
   }, [setHabits]);
 
-  const toggleCompletion = useCallback((habitId, dateKey = todayKey()) => {
+  const toggleCompletion = useCallback((habitId, dateKey = today) => {
     setHabits((prev) => prev.map((h) => {
       if (h.id !== habitId) return h;
       const has = h.completions.includes(dateKey);
@@ -162,7 +168,7 @@ export function HabitProvider({ children }) {
         : [...h.completions, dateKey];
       return { ...h, completions };
     }));
-  }, [setHabits]);
+  }, [setHabits, today]);
 
   const reorderHabits = useCallback((fromIndex, toIndex) => {
     setHabits((prev) => {
@@ -191,14 +197,14 @@ export function HabitProvider({ children }) {
       const days = normalizeSchedule(h.days);
       const pauses = normalizePauses(h.pauses);
       const weeklyGoal = h.goal > 0 ? Math.min(h.goal, days.length) : days.length;
-      const weeklyCount = countCompletionsInLastNDays(h.completions, 7);
-      const currentStreak = calculateCurrentStreak(h.completions, days, pauses);
-      const completedToday = h.completions.includes(todayKey());
-      const paused = isPausedOn(todayKey(), pauses);
+      const weeklyCount = countCompletionsInLastNDays(h.completions, 7, today);
+      const currentStreak = calculateCurrentStreak(h.completions, days, pauses, today);
+      const completedToday = h.completions.includes(today);
+      const paused = isPausedOn(today, pauses);
       // A paused ritual is not due, which is the whole point of pausing it —
       // and that alone keeps it out of the day's target, out of the at-risk
       // count and out of the completion rate.
-      const dueToday = !paused && isScheduled(todayKey(), days);
+      const dueToday = !paused && isScheduled(today, days);
 
       return {
         ...h,
@@ -208,11 +214,11 @@ export function HabitProvider({ children }) {
         currentStreak,
         bestStreak: calculateBestStreak(h.completions, days, pauses),
         // Null until there is enough history behind it to be worth a number.
-        consistency: calculateConsistency(h.completions, days, pauses, h.createdAt),
+        consistency: calculateConsistency(h.completions, days, pauses, h.createdAt, undefined, today),
         // And where those missed days fall. Null unless one weekday is
         // genuinely worse than the others — a pattern that is not there is
         // worse than no pattern at all.
-        weakestDay: findWeakestWeekday(h.completions, days, pauses, h.createdAt),
+        weakestDay: findWeakestWeekday(h.completions, days, pauses, h.createdAt, undefined, today),
         completedToday,
         dueToday,
         // The one thing on this board where doing nothing costs something.
@@ -228,7 +234,7 @@ export function HabitProvider({ children }) {
         goalMet: weeklyCount >= weeklyGoal,
       };
     })
-  ), [habits]);
+  ), [habits, today]);
 
   const globalStats = useMemo(() => {
     const total = habitsWithStats.length;
@@ -265,6 +271,7 @@ export function HabitProvider({ children }) {
   const value = useMemo(() => ({
     habits: habitsWithStats,
     allDays: ALL_DAYS,
+    today,
     globalStats,
     recentlyDeleted,
     addHabit,
@@ -277,7 +284,7 @@ export function HabitProvider({ children }) {
     toggleCompletion,
     reorderHabits,
   }), [
-    habitsWithStats, globalStats, recentlyDeleted, addHabit, editHabit,
+    habitsWithStats, globalStats, recentlyDeleted, today, addHabit, editHabit,
     togglePause, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
     toggleCompletion, reorderHabits,
   ]);

@@ -10,14 +10,17 @@ import HabitFilters, { habitFilter } from './components/HabitFilters';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
 import DataControls from './components/DataControls';
-import { formatFriendlyDate, todayKey } from './utils/dateHelpers';
+import { formatFriendlyDate } from './utils/dateHelpers';
 
 export default function App() {
   const {
-    habits, globalStats, recentlyDeleted, addHabit, editHabit, togglePause, deleteHabit,
-    restoreHabit, dismissDeleted, replaceHabits, toggleCompletion, reorderHabits,
+    habits, globalStats, recentlyDeleted, today, addHabit, editHabit, togglePause,
+    deleteHabit, restoreHabit, dismissDeleted, replaceHabits, toggleCompletion,
+    reorderHabits,
   } = useHabits();
-  const today = useMemo(() => formatFriendlyDate(todayKey()), []);
+  // The date in the header comes from the same place every streak on the page
+  // does, so the two cannot disagree after midnight.
+  const todayLabel = useMemo(() => formatFriendlyDate(today), [today]);
 
   // Which slice of the board is on screen. Past a handful of rituals the
   // list stops being something you read and becomes something you scan, and
@@ -53,7 +56,7 @@ export default function App() {
         {/* MIDDLE: Tight Content Stack (Matches Your Image Exactly) */}
         <div className="my-auto relative z-10 flex flex-col">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-amber-500/80 mb-2">
-            {today}
+            {todayLabel}
           </p>
           
           {/* Headline - No extra padding, custom tight leading, tight letters */}
@@ -120,7 +123,7 @@ export default function App() {
             </h2>
             <FocusTimer 
               habits={habits} 
-              onFinish={(habitId) => toggleCompletion(habitId, todayKey())} 
+              onFinish={(habitId) => toggleCompletion(habitId, today)} 
             />
           </aside>
 
