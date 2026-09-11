@@ -3,7 +3,7 @@ import { Flame } from 'lucide-react';
 export default function DailyProgress({ stats }) {
   const {
     total, dueToday, completedToday, bonusToday, completionRate,
-    atRisk, longestAtRisk,
+    atRisk, longestAtRisk, closedOutStreak, perfectDays, owedDays, perfectWindow,
   } = stats;
 
   if (total === 0) return null;
@@ -48,6 +48,32 @@ export default function DailyProgress({ stats }) {
             ? 'Every ritual due today is checked off — see you tomorrow.'
             : `${100 - completionRate}% left to close out the day.`}
       </p>
+
+      {/* The day as a whole, under the day's own bar. Every other streak on
+          this board belongs to one ritual, which is the right way to measure
+          a ritual and a poor way to measure a month: keep four of five every
+          day and the board shows four healthy runs and says nothing about
+          the fifth being dropped daily.
+
+          Held back until there is a month with something in it. On a board
+          two days old "0 of 1 day closed out" is a verdict, not a
+          measurement. */}
+      {owedDays > 0 && (
+        <p className="mt-2 font-mono text-[11px] text-ink-700">
+          {closedOutStreak > 0 ? (
+            <>
+              <span className="text-teal">
+                {closedOutStreak} day{closedOutStreak === 1 ? '' : 's'}
+              </span>
+              {' closed out in a row · '}
+            </>
+          ) : (
+            'No run going · '
+          )}
+          {perfectDays} of {owedDays} owed day{owedDays === 1 ? '' : 's'} finished
+          {' in the last '}{perfectWindow}
+        </p>
+      )}
 
       {/* Below the percentage, not instead of it. A percentage says how much
           is outstanding; this says what it costs to leave it that way. */}

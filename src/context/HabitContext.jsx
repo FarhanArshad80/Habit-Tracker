@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useCallback, useState } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useToday } from '../hooks/useToday';
+import { perfectDayStats } from '../utils/perfectDays';
 import { createId } from '../utils/ids';
 import {
   addDays,
@@ -256,6 +257,9 @@ export function HabitProvider({ children }) {
     // The longest of the runs on the line, because "you could lose 40 days"
     // is a different sentence from "you could lose two".
     const longestAtRisk = atRisk.reduce((max, h) => Math.max(max, h.currentStreak), 0);
+    // Measured on the raw rituals rather than on today's summary, because
+    // this one reads a month of history rather than the state of the day.
+    const closedOut = perfectDayStats(habitsWithStats, today);
     const goalsMet = active.filter((h) => h.goalMet).length;
     const paused = total - active.length;
     const totalCompletions = habitsWithStats.reduce((sum, h) => sum + h.totalCompletions, 0);
@@ -265,8 +269,14 @@ export function HabitProvider({ children }) {
       dueToday, completedToday, bonusToday, bestStreak,
       totalCompletions, completionRate, goalsMet,
       atRisk: atRisk.length, longestAtRisk,
+      // The day as a whole: the run of days where everything owed was done,
+      // and how many of the last month's owed days were closed out.
+      closedOutStreak: closedOut.streak,
+      perfectDays: closedOut.perfect,
+      owedDays: closedOut.owedDays,
+      perfectWindow: closedOut.window,
     };
-  }, [habitsWithStats]);
+  }, [habitsWithStats, today]);
 
   const value = useMemo(() => ({
     habits: habitsWithStats,
