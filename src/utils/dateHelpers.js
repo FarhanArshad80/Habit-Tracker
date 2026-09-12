@@ -168,10 +168,21 @@ export function formatFriendlyDate(dateKey) {
 // "Consecutive" means consecutive *scheduled* days. A Monday-Wednesday-Friday
 // ritual keeps its streak over the weekend, because Saturday was never a day
 // it was meant to happen and a rest day is not a failure.
-export function calculateCurrentStreak(completions, days, pauses = [], today = todayKey()) {
+//
+// `createdAt` is the floor. A ritual cannot have been kept before it was
+// started, and every other number on the board already knows it — the trail,
+// the grid and the consistency rate all refuse to count days that predate
+// the ritual. The streaks were the two that did not, so a check-in recorded
+// on a day the ritual did not exist counted toward a run that the grid drew
+// as empty.
+export function calculateCurrentStreak(
+  completions, days, pauses = [], today = todayKey(), createdAt
+) {
   if (!completions || completions.length === 0) return 0;
   const schedule = normalizeSchedule(days);
   const set = new Set(completions);
+  const counts = (dateKey) =>
+    dateKey && set.has(dateKey) && (!createdAt || dateKey >= createdAt);
 
   // Start on the most recent day the ritual was actually expected.
   let cursor = today;
@@ -179,11 +190,11 @@ export function calculateCurrentStreak(completions, days, pauses = [], today = t
     cursor = previousDueDay(cursor, schedule, pauses);
   } else if (!set.has(cursor)) {
     cursor = previousDueDay(cursor, schedule, pauses);
-    if (!set.has(cursor)) return 0;
+    if (!counts(cursor)) return 0;
   }
 
   let streak = 0;
-  while (set.has(cursor)) {
+  while (counts(cursor)) {
     streak += 1;
     cursor = previousDueDay(cursor, schedule, pauses);
   }
@@ -235,12 +246,15 @@ export function calculateConsistency(
 // rest day are a bonus rather than part of the run — they were never asked
 // for, so counting them would make a streak mean two different things
 // depending on the day it happened to fall on.
-export function calculateBestStreak(completions, days, pauses = []) {
+export function calculateBestStreak(completions, days, pauses = [], createdAt) {
   if (!completions || completions.length === 0) return 0;
   const schedule = normalizeSchedule(days);
 
   const sorted = [...new Set(completions)]
-    .filter((dateKey) => isDue(dateKey, schedule, pauses))
+    .filter(
+      (dateKey) =>
+        (!createdAt || dateKey >= createdAt) && isDue(dateKey, schedule, pauses)
+    )
     .sort();
 
   if (sorted.length === 0) return 0;

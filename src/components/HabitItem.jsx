@@ -340,17 +340,28 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
             {trail.map((dateKey, i) => {
               const done = completedSet.has(dateKey);
               const due = isScheduled(dateKey, habit.days);
+              // Before the ritual was started there is nothing to record.
+              // The dot stays on the line so the fortnight keeps its shape,
+              // but it is not a day anyone can claim to have kept.
+              const started = !habit.createdAt || dateKey >= habit.createdAt;
               const nextDone = i < trail.length - 1 && completedSet.has(trail[i + 1]);
               return (
                 <div key={dateKey} className="flex items-center" style={{ flex: i < trail.length - 1 ? 1 : 'none' }}>
                   <button
                     type="button"
+                    disabled={!started}
                     onClick={() => onToggle(habit.id, dateKey)}
-                    title={`${formatFriendlyDate(dateKey)}${due ? '' : ' · rest day'}`}
+                    title={
+                      started
+                        ? `${formatFriendlyDate(dateKey)}${due ? '' : ' · rest day'}`
+                        : `${formatFriendlyDate(dateKey)} · before this ritual started`
+                    }
                     aria-label={`${formatFriendlyDate(dateKey)}: ${
-                      done ? 'completed' : due ? 'not completed' : 'rest day'
+                      !started
+                        ? 'before this ritual started'
+                        : done ? 'completed' : due ? 'not completed' : 'rest day'
                     }`}
-                    className={`relative h-2.5 w-2.5 shrink-0 rounded-full transition-transform hover:scale-150 ${dateKey === today ? 'ring-2 ring-offset-2 ring-offset-void-200' : ''}`}
+                    className={`relative h-2.5 w-2.5 shrink-0 rounded-full transition-transform ${started ? 'hover:scale-150' : 'cursor-default opacity-40'} ${dateKey === today ? 'ring-2 ring-offset-2 ring-offset-void-200' : ''}`}
                     style={{
                       // A missed rest day is hollow rather than dim: dimming
                       // reads as a fainter version of "missed", where nothing

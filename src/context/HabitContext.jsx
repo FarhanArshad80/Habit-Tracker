@@ -199,7 +199,7 @@ export function HabitProvider({ children }) {
       const pauses = normalizePauses(h.pauses);
       const weeklyGoal = h.goal > 0 ? Math.min(h.goal, days.length) : days.length;
       const weeklyCount = countCompletionsInLastNDays(h.completions, 7, today);
-      const currentStreak = calculateCurrentStreak(h.completions, days, pauses, today);
+      const currentStreak = calculateCurrentStreak(h.completions, days, pauses, today, h.createdAt);
       const completedToday = h.completions.includes(today);
       const paused = isPausedOn(today, pauses);
       // A paused ritual is not due, which is the whole point of pausing it —
@@ -213,7 +213,7 @@ export function HabitProvider({ children }) {
         pauses,
         paused,
         currentStreak,
-        bestStreak: calculateBestStreak(h.completions, days, pauses),
+        bestStreak: calculateBestStreak(h.completions, days, pauses, h.createdAt),
         // Null until there is enough history behind it to be worth a number.
         consistency: calculateConsistency(h.completions, days, pauses, h.createdAt, undefined, today),
         // And where those missed days fall. Null unless one weekday is
