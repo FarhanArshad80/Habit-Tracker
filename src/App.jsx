@@ -10,6 +10,7 @@ import HabitFilters, { habitFilter } from './components/HabitFilters';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
 import DataControls from './components/DataControls';
+import { useDocumentTitle } from './hooks/useDocumentTitle';
 import { formatFriendlyDate } from './utils/dateHelpers';
 
 export default function App() {
@@ -21,6 +22,20 @@ export default function App() {
   // The date in the header comes from the same place every streak on the page
   // does, so the two cannot disagree after midnight.
   const todayLabel = useMemo(() => formatFriendlyDate(today), [today]);
+
+  // What the tab says from across a window of them. A count in brackets is
+  // the convention every unread-anything uses, and it survives being
+  // squeezed down to forty pixels in a pinned tab where a sentence would
+  // not.
+  //
+  // The tick is deliberate: closing out a day is the thing this board is
+  // for, and a tab that only ever nags has nothing to say on the day it
+  // goes right. Nothing at all when nothing is due, because a rest day is
+  // not an achievement and a badge on it would be noise.
+  const owed = globalStats.dueToday - globalStats.completedToday;
+  const tabMarker = owed > 0 ? `(${owed})` : globalStats.dueToday > 0 ? '✓' : '';
+
+  useDocumentTitle(tabMarker);
 
   // Which slice of the board is on screen. Past a handful of rituals the
   // list stops being something you read and becomes something you scan, and
