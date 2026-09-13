@@ -5,6 +5,25 @@ import { resolveIcon } from '../utils/iconMap';
 import DayPicker from './DayPicker';
 import { ALL_DAYS } from '../utils/dateHelpers';
 
+// A blank "Name" box is the hardest part of starting. These are rituals most
+// people recognise straight away, each with a shape that suits it — nobody
+// lifts weights seven days a week, and a late Friday or Saturday night should not break a
+// sleep routine — so picking one fills in the whole form, not only the name.
+//
+// A starting point rather than a shortcut past the form: everything stays
+// editable, and nothing is added until the button is pressed.
+const STARTERS = [
+  { name: 'Read 20 minutes', icon: 'BookOpen', color: 'gold', days: [0, 1, 2, 3, 4, 5, 6], goal: 7 },
+  { name: 'Drink 2L of water', icon: 'Droplet', color: 'sky', days: [0, 1, 2, 3, 4, 5, 6], goal: 7 },
+  { name: 'Work out', icon: 'Dumbbell', color: 'rose', days: [1, 3, 5], goal: 3 },
+  { name: 'Walk 8,000 steps', icon: 'Footprints', color: 'lime', days: [0, 1, 2, 3, 4, 5, 6], goal: 5 },
+  { name: 'In bed by 11', icon: 'Moon', color: 'violet', days: [0, 1, 2, 3, 4], goal: 5 },
+  { name: 'Practise coding', icon: 'Code2', color: 'teal', days: [1, 2, 3, 4, 5], goal: 5 },
+];
+
+// Enough to spark an idea without turning the top of the form into a menu.
+const STARTERS_SHOWN = 4;
+
 export default function AddHabitForm({ onAdd }) {
   const { habits } = useHabits();
   const [open, setOpen] = useState(false);
@@ -21,6 +40,22 @@ export default function AddHabitForm({ onAdd }) {
     setColor(HABIT_COLORS[0].id);
     setDays(ALL_DAYS);
     setGoal(7);
+    setError('');
+  }
+
+  // Rituals already on the board are not suggested again: offering one would
+  // only lead to the duplicate-name error below.
+  const tracked = new Set(habits.map((h) => h.name.trim().toLowerCase()));
+  const starters = STARTERS
+    .filter((starter) => !tracked.has(starter.name.toLowerCase()))
+    .slice(0, STARTERS_SHOWN);
+
+  function applyStarter(starter) {
+    setName(starter.name);
+    setIcon(starter.icon);
+    setColor(starter.color);
+    setDays(starter.days);
+    setGoal(Math.min(starter.goal, starter.days.length));
     setError('');
   }
 
@@ -99,6 +134,29 @@ export default function AddHabitForm({ onAdd }) {
           className="w-full rounded-lg border border-void-400 bg-void-100 px-3.5 py-2.5 text-sm text-ink-100 placeholder:text-ink-700 outline-none transition-colors focus:border-gold/60"
         />
         {error && <p className="mt-1.5 text-xs text-rose">{error}</p>}
+
+        {/* Only while the box is empty. Once somebody has started typing
+            their own idea, suggestions underneath it are in the way. */}
+        {!name.trim() && starters.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label="Ideas to start from">
+            <span className="text-xs text-ink-700">Ideas:</span>
+            {starters.map((starter) => {
+              const StarterIcon = resolveIcon(starter.icon);
+
+              return (
+                <button
+                  key={starter.name}
+                  type="button"
+                  onClick={() => applyStarter(starter)}
+                  className="flex items-center gap-1 rounded-full border border-void-400 px-2.5 py-1 text-xs text-ink-500 transition-colors hover:border-gold/60 hover:text-gold"
+                >
+                  <StarterIcon className="h-3 w-3" strokeWidth={2} />
+                  {starter.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="mt-4">
