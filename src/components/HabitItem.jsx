@@ -10,6 +10,34 @@ import DayPicker from './DayPicker';
 
 const TRAIL_LENGTH = 14;
 
+// How close a run has to be to the record before it is worth pointing out.
+// Three days is a stretch somebody can see the end of; ten days away is not
+// a target, it is just a bigger number somewhere else on the card.
+const RECORD_IN_REACH = 3;
+
+// A record of one or two days is where every ritual starts, and calling it
+// "your best run yet" on day two would spend the phrase before it means
+// anything.
+const RECORD_WORTH_NAMING = 3;
+
+// The sentence the flame badge cannot say. It shows the run; it does not
+// show that the run is two days from the longest this ritual has ever gone,
+// which is the one comparison that turns an ordinary Tuesday into a reason
+// to check in. Null whenever there is nothing close enough to be motivating.
+function recordNote(current, best) {
+  if (current <= 0) return null;
+
+  if (current >= best) {
+    return current >= RECORD_WORTH_NAMING ? 'Your longest run yet' : null;
+  }
+
+  const gap = best - current;
+
+  if (gap > RECORD_IN_REACH) return null;
+
+  return `${gap} day${gap === 1 ? '' : 's'} from your best run of ${best}`;
+}
+
 function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
@@ -306,6 +334,12 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
               )}
             </div>
           </div>
+
+          {recordNote(habit.currentStreak, habit.bestStreak) && (
+            <p className="mt-2 font-mono text-[11px]" style={{ color: hex }}>
+              {recordNote(habit.currentStreak, habit.bestStreak)}
+            </p>
+          )}
 
           {/* The number a streak cannot give you. A run says what is true
               right now; this says what has been true for a month, and it is
