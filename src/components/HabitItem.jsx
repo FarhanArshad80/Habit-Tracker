@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play } from 'lucide-react';
+import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS } from '../context/HabitContext';
 import {
-  getLastNDays, formatFriendlyDate, isScheduled,
+  getLastNDays, formatFriendlyDate, isDue, isPausedOn, isSkippedOn,
 } from '../utils/dateHelpers';
 import { useHabits } from '../context/HabitContext';
 import DayPicker from './DayPicker';
@@ -42,7 +42,7 @@ function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
 
-export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit, onTogglePause, reorderable = true }) {
+export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit, onTogglePause, onToggleSkip, reorderable = true }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(habit.name);
@@ -291,6 +291,34 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                 </div>
               ) : (
                 <div className="flex items-center gap-0.5">
+                  {/* Today off, without the ritual going quiet indefinitely.
+                      Withdrawn while paused, where the day is already set
+                      aside and skipping it would be a second thing to undo.
+                      Held open once used, because a day skipped by mistake
+                      needs a visible way back. */}
+                  {(habit.skippedToday || !habit.paused) && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleSkip(habit.id, today)}
+                      aria-pressed={habit.skippedToday}
+                      aria-label={`${
+                        habit.skippedToday ? 'Stop skipping' : 'Skip'
+                      } "${habit.name}" today`}
+                      title={
+                        habit.skippedToday
+                          ? 'Skipped today — press to make it due again'
+                          : 'Skip today — one day off, streak intact'
+                      }
+                      className={`rounded-md p-1 transition-opacity hover:text-gold focus-visible:opacity-100 ${
+                        habit.skippedToday
+                          ? 'text-gold opacity-100'
+                          : 'text-ink-700 opacity-0 group-hover:opacity-100'
+                      }`}
+                    >
+                      <CalendarOff className="h-4 w-4" strokeWidth={1.75} />
+                    </button>
+                  )}
+
                   {/* Shown at full strength while paused, unlike its
                       neighbours: on a set-aside ritual, picking it back up is
                       the only thing anyone is here to do. */}
@@ -373,7 +401,12 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
           <div className="mt-3 flex items-center" role="group" aria-label="Last 14 days">
             {trail.map((dateKey, i) => {
               const done = completedSet.has(dateKey);
-              const due = isScheduled(dateKey, habit.days);
+              // Read against the pauses as well as the schedule. Asking the
+              // schedule alone drew a day that had been deliberately set
+              // aside as a day that was owed and missed, which is the one
+              // thing skipping a day is meant to avoid.
+              const due = isDue(dateKey, habit.days, habit.pauses);
+              const aside = isPausedOn(dateKey, habit.pauses);
               // Before the ritual was started there is nothing to record.
               // The dot stays on the line so the fortnight keeps its shape,
               // but it is not a day anyone can claim to have kept.
@@ -387,13 +420,25 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                     onClick={() => onToggle(habit.id, dateKey)}
                     title={
                       started
-                        ? `${formatFriendlyDate(dateKey)}${due ? '' : ' · rest day'}`
+                        ? `${formatFriendlyDate(dateKey)}${
+                            due
+                              ? ''
+                              : aside
+                                ? isSkippedOn(dateKey, habit.pauses)
+                                  ? ' · skipped'
+                                  : ' · set aside'
+                                : ' · rest day'
+                          }`
                         : `${formatFriendlyDate(dateKey)} · before this ritual started`
                     }
                     aria-label={`${formatFriendlyDate(dateKey)}: ${
                       !started
                         ? 'before this ritual started'
-                        : done ? 'completed' : due ? 'not completed' : 'rest day'
+                        : done
+                          ? 'completed'
+                          : due
+                            ? 'not completed'
+                            : aside ? 'set aside' : 'rest day'
                     }`}
                     className={`relative h-2.5 w-2.5 shrink-0 rounded-full transition-transform ${started ? 'hover:scale-150' : 'cursor-default opacity-40'} ${dateKey === today ? 'ring-2 ring-offset-2 ring-offset-void-200' : ''}`}
                     style={{

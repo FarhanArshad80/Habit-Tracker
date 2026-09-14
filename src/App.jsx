@@ -16,8 +16,8 @@ import { formatFriendlyDate } from './utils/dateHelpers';
 export default function App() {
   const {
     habits, globalStats, recentlyDeleted, today, addHabit, editHabit, togglePause,
-    deleteHabit, restoreHabit, dismissDeleted, replaceHabits, toggleCompletion,
-    reorderHabits,
+    toggleSkip, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
+    toggleCompletion, reorderHabits,
   } = useHabits();
   // The date in the header comes from the same place every streak on the page
   // does, so the two cannot disagree after midnight.
@@ -125,6 +125,7 @@ export default function App() {
               onMove={reorderHabits}
               onEdit={editHabit}
               onTogglePause={togglePause}
+              onToggleSkip={toggleSkip}
               reorderable={filter === 'all'}
               emptyMessage={habits.length > 0 ? view.empty : undefined}
             />

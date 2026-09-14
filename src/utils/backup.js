@@ -1,7 +1,11 @@
 import { createId } from './ids';
-import { todayKey, normalizeSchedule } from './dateHelpers';
+import { todayKey, normalizeSchedule, normalizePauses } from './dateHelpers';
 
-export const BACKUP_VERSION = 2;
+// 3 adds the days a ritual was set aside. Until now the export dropped them
+// silently, so restoring a file turned every pause and every skipped day
+// back into a day that was owed and missed — the streak the restore was
+// meant to preserve was the first thing it broke.
+export const BACKUP_VERSION = 3;
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -28,6 +32,7 @@ export function serializeHabits(habits) {
         goal: h.weeklyGoal ?? h.goal,
         createdAt: h.createdAt,
         completions: h.completions,
+        pauses: h.pauses,
       })),
     },
     null,
@@ -53,6 +58,15 @@ function sanitizeHabit(raw, knownIcons, knownColors) {
     ? [...new Set(raw.completions.filter((d) => typeof d === 'string' && DATE_KEY.test(d)))].sort()
     : [];
 
+  // A version 1 or 2 backup carries no pauses, which reads as a ritual that
+  // was never set aside — exactly what those rituals looked like to the
+  // build that wrote the file.
+  const pauses = normalizePauses(raw.pauses).filter(
+    (pause) =>
+      DATE_KEY.test(pause.from) &&
+      (pause.to === null || pause.to === undefined || DATE_KEY.test(pause.to))
+  ).map((pause) => ({ from: pause.from, to: pause.to ?? null }));
+
   return {
     id: typeof raw.id === 'string' && raw.id ? raw.id : createId(),
     name: name.slice(0, 40),
@@ -64,6 +78,7 @@ function sanitizeHabit(raw, knownIcons, knownColors) {
       ? raw.createdAt
       : todayKey(),
     completions,
+    pauses,
   };
 }
 

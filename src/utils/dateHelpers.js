@@ -107,6 +107,19 @@ export function isPausedOn(dateKey, pauses) {
   );
 }
 
+// A single day set aside, as opposed to an open-ended stretch of them.
+//
+// Both are stored the same way, because to everything that counts a day they
+// are the same thing: a day that was never owed. The difference only matters
+// to the control that made it — a one-day skip is undone by pressing the
+// same button again, where a pause is undone by resuming — so this is the
+// question that tells the two apart.
+export function isSkippedOn(dateKey, pauses) {
+  return normalizePauses(pauses).some(
+    (pause) => pause.from === dateKey && pause.to === dateKey
+  );
+}
+
 // Scheduled, and not set aside. This is the question everything that counts
 // a day should be asking.
 export function isDue(dateKey, days, pauses) {

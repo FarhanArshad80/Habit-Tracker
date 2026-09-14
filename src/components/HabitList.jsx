@@ -2,7 +2,7 @@ import { Sparkles } from 'lucide-react';
 import HabitItem from './HabitItem';
 
 export default function HabitList({
-  habits, onToggle, onDelete, onMove, onEdit, onTogglePause,
+  habits, onToggle, onDelete, onMove, onEdit, onTogglePause, onToggleSkip,
   reorderable = true, emptyMessage,
 }) {
   if (habits.length === 0) {
@@ -43,6 +43,7 @@ export default function HabitList({
           onMove={onMove}
           onEdit={onEdit}
           onTogglePause={onTogglePause}
+          onToggleSkip={onToggleSkip}
           reorderable={reorderable}
         />
       ))}

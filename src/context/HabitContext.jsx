@@ -13,6 +13,7 @@ import {
   normalizeSchedule,
   normalizePauses,
   isPausedOn,
+  isSkippedOn,
   isScheduled,
   ALL_DAYS,
 } from '../utils/dateHelpers';
@@ -124,6 +125,42 @@ export function HabitProvider({ children }) {
     }));
   }, [setHabits, today]);
 
+  // One day off, rather than a stretch of them.
+  //
+  // Pausing was the only way to say "not today", and it is the wrong shape
+  // for it: it runs until it is explicitly resumed, so a single unavoidable
+  // day — travelling, ill, the gym shut — cost two deliberate acts a day
+  // apart, and forgetting the second one quietly set the ritual aside for a
+  // week. The alternative was to take the miss, which breaks a streak that
+  // was never really broken.
+  //
+  // Stored as a pause that opens and closes on the same day, so everything
+  // that already reads pauses — the streak, the trail, the consistency rate,
+  // the day's target — treats it correctly without being taught anything
+  // new. Pressing again puts the day back.
+  const toggleSkip = useCallback((habitId, dateKey = today) => {
+    setHabits((prev) => prev.map((h) => {
+      if (h.id !== habitId) return h;
+
+      const pauses = normalizePauses(h.pauses);
+
+      if (isSkippedOn(dateKey, pauses)) {
+        return {
+          ...h,
+          pauses: pauses.filter(
+            (pause) => !(pause.from === dateKey && pause.to === dateKey)
+          ),
+        };
+      }
+
+      // Already covered by a longer pause, where there is nothing to set
+      // aside and a second entry would only have to be undone twice.
+      if (isPausedOn(dateKey, pauses)) return h;
+
+      return { ...h, pauses: [...pauses, { from: dateKey, to: dateKey }] };
+    }));
+  }, [setHabits, today]);
+
   const deleteHabit = useCallback((habitId) => {
     const index = habits.findIndex((h) => h.id === habitId);
     if (index === -1) return;
@@ -202,6 +239,10 @@ export function HabitProvider({ children }) {
       const currentStreak = calculateCurrentStreak(h.completions, days, pauses, today, h.createdAt);
       const completedToday = h.completions.includes(today);
       const paused = isPausedOn(today, pauses);
+      // Set aside for today only. Drawn differently from a pause because it
+      // is undone differently, and because "skipped today" and "set aside
+      // until further notice" are not the same sentence to read on a card.
+      const skippedToday = isSkippedOn(today, pauses);
       // A paused ritual is not due, which is the whole point of pausing it —
       // and that alone keeps it out of the day's target, out of the at-risk
       // count and out of the completion rate.
@@ -212,6 +253,7 @@ export function HabitProvider({ children }) {
         days,
         pauses,
         paused,
+        skippedToday,
         currentStreak,
         bestStreak: calculateBestStreak(h.completions, days, pauses, h.createdAt),
         // Null until there is enough history behind it to be worth a number.
@@ -287,6 +329,7 @@ export function HabitProvider({ children }) {
     addHabit,
     editHabit,
     togglePause,
+    toggleSkip,
     deleteHabit,
     restoreHabit,
     dismissDeleted,
@@ -295,7 +338,7 @@ export function HabitProvider({ children }) {
     reorderHabits,
   }), [
     habitsWithStats, globalStats, recentlyDeleted, today, addHabit, editHabit,
-    togglePause, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
+    togglePause, toggleSkip, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
     toggleCompletion, reorderHabits,
   ]);
 
