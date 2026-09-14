@@ -7,6 +7,7 @@ import WeekAhead from './components/WeekAhead';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import HabitFilters, { habitFilter } from './components/HabitFilters';
+import HabitOrder, { sortHabits } from './components/HabitOrder';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
 import DataControls from './components/DataControls';
@@ -42,8 +43,15 @@ export default function App() {
   // "what is still owed today" is the question it is usually being scanned
   // for.
   const [filter, setFilter] = useState('all');
+  // And in what order. Kept apart from the filter because they answer
+  // different questions — which rituals am I looking at, and which of them
+  // do I want to see first.
+  const [order, setOrder] = useState('manual');
   const view = habitFilter(filter);
-  const visible = useMemo(() => habits.filter(view.match), [habits, view]);
+  const visible = useMemo(
+    () => sortHabits(habits.filter(view.match), order),
+    [habits, view, order]
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col lg:flex-row overflow-x-hidden">
@@ -117,7 +125,10 @@ export default function App() {
             <h2 className="font-display text-xs font-bold uppercase tracking-wider text-slate-500">
               Your rituals
             </h2>
-            <HabitFilters habits={habits} active={filter} onChange={setFilter} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <HabitFilters habits={habits} active={filter} onChange={setFilter} />
+              <HabitOrder habits={habits} active={order} onChange={setOrder} />
+            </div>
             <HabitList 
               habits={visible} 
               onToggle={toggleCompletion} 
@@ -126,7 +137,12 @@ export default function App() {
               onEdit={editHabit}
               onTogglePause={togglePause}
               onToggleSkip={toggleSkip}
-              reorderable={filter === 'all'}
+              // The arrows move a ritual past its neighbour in the stored
+              // order. Under a filter that neighbour may be hidden, and
+              // under a sort it is not the row above — either way the press
+              // appears to do nothing, so the control is withdrawn rather
+              // than left to lie.
+              reorderable={filter === 'all' && order === 'manual'}
               emptyMessage={habits.length > 0 ? view.empty : undefined}
             />
             <AddHabitForm onAdd={addHabit} />
