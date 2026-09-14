@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
-import { HABIT_COLORS } from '../context/HabitContext';
+import { HABIT_COLORS, WHY_LIMIT } from '../context/HabitContext';
 import {
   getLastNDays, formatFriendlyDate, isDue, isPausedOn, isSkippedOn,
 } from '../utils/dateHelpers';
@@ -46,6 +46,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(habit.name);
+  const [draftWhy, setDraftWhy] = useState(habit.why || '');
   const [draftGoal, setDraftGoal] = useState(habit.weeklyGoal);
   const [draftDays, setDraftDays] = useState(habit.days);
   const [editError, setEditError] = useState('');
@@ -61,6 +62,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   // opened after a change elsewhere does not start from a stale value.
   function startEditing() {
     setDraftName(habit.name);
+    setDraftWhy(habit.why || '');
     setDraftGoal(habit.weeklyGoal);
     setDraftDays(habit.days);
     setEditError('');
@@ -96,7 +98,9 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
       return;
     }
 
-    onEdit(habit.id, { name: trimmed, goal: Number(draftGoal), days: draftDays });
+    onEdit(habit.id, {
+      name: trimmed, why: draftWhy, goal: Number(draftGoal), days: draftDays,
+    });
     setEditing(false);
   }
 
@@ -176,6 +180,23 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                 >
                   Cancel
                 </button>
+                <div className="w-full">
+                  <label
+                    htmlFor={`why-${habit.id}`}
+                    className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500"
+                  >
+                    Why it matters
+                  </label>
+                  <input
+                    id={`why-${habit.id}`}
+                    type="text"
+                    value={draftWhy}
+                    onChange={(e) => setDraftWhy(e.target.value)}
+                    placeholder="Optional — emptying this clears it"
+                    maxLength={WHY_LIMIT}
+                    className="w-full rounded-lg border border-void-400 bg-void-100 px-3 py-1.5 text-sm text-ink-100 placeholder:text-ink-700 outline-none focus:border-gold/60"
+                  />
+                </div>
                 <div className="w-full">
                   <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500">
                     Due on
@@ -362,6 +383,15 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
               )}
             </div>
           </div>
+
+          {/* The reason, under the name where the name's own promise is.
+              Above the streak notes rather than below them: those describe
+              how it is going, and this is what it is for. */}
+          {!editing && habit.why && (
+            <p className="mt-1.5 truncate text-[13px] italic text-ink-500" title={habit.why}>
+              {habit.why}
+            </p>
+          )}
 
           {recordNote(habit.currentStreak, habit.bestStreak) && (
             <p className="mt-2 font-mono text-[11px]" style={{ color: hex }}>

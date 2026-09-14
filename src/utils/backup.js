@@ -1,13 +1,18 @@
 import { createId } from './ids';
 import { todayKey, normalizeSchedule, normalizePauses } from './dateHelpers';
 
-// 3 adds the days a ritual was set aside. Until now the export dropped them
+// 4 adds the reason a ritual is on the board. 3 added the days a ritual was
+// set aside. Until now the export dropped them
 // silently, so restoring a file turned every pause and every skipped day
 // back into a day that was owed and missed — the streak the restore was
 // meant to preserve was the first thing it broke.
-export const BACKUP_VERSION = 3;
+export const BACKUP_VERSION = 4;
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Kept in step with the form that writes it, so a hand-edited file cannot
+// put a paragraph on a card that has one line to render it in.
+const WHY_LIMIT = 80;
 
 export function backupFilename(date = new Date()) {
   const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -26,6 +31,7 @@ export function serializeHabits(habits) {
       habits: habits.map((h) => ({
         id: h.id,
         name: h.name,
+        why: h.why,
         icon: h.icon,
         color: h.color,
         days: h.days,
@@ -70,6 +76,8 @@ function sanitizeHabit(raw, knownIcons, knownColors) {
   return {
     id: typeof raw.id === 'string' && raw.id ? raw.id : createId(),
     name: name.slice(0, 40),
+    // Absent in every earlier version, and blank is what those rituals had.
+    why: typeof raw.why === 'string' ? raw.why.trim().slice(0, WHY_LIMIT) : '',
     icon: knownIcons.includes(raw.icon) ? raw.icon : knownIcons[0],
     color: knownColors.includes(raw.color) ? raw.color : knownColors[0],
     days,

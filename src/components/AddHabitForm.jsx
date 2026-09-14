@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import { HABIT_COLORS, HABIT_ICONS, useHabits } from '../context/HabitContext';
+import { HABIT_COLORS, HABIT_ICONS, WHY_LIMIT, useHabits } from '../context/HabitContext';
 import { resolveIcon } from '../utils/iconMap';
 import DayPicker from './DayPicker';
 import { ALL_DAYS } from '../utils/dateHelpers';
@@ -28,6 +28,7 @@ export default function AddHabitForm({ onAdd }) {
   const { habits } = useHabits();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
+  const [why, setWhy] = useState('');
   const [icon, setIcon] = useState(HABIT_ICONS[0]);
   const [color, setColor] = useState(HABIT_COLORS[0].id);
   const [days, setDays] = useState(ALL_DAYS);
@@ -36,6 +37,7 @@ export default function AddHabitForm({ onAdd }) {
 
   function reset() {
     setName('');
+    setWhy('');
     setIcon(HABIT_ICONS[0]);
     setColor(HABIT_COLORS[0].id);
     setDays(ALL_DAYS);
@@ -84,7 +86,7 @@ export default function AddHabitForm({ onAdd }) {
       setError('You already track a ritual with that name.');
       return;
     }
-    onAdd({ name: trimmed, icon, color, days, goal: Number(goal) });
+    onAdd({ name: trimmed, why, icon, color, days, goal: Number(goal) });
     reset();
     setOpen(false);
   }
@@ -157,6 +159,24 @@ export default function AddHabitForm({ onAdd }) {
             })}
           </div>
         )}
+      </div>
+
+      {/* Optional, and quiet about it. A required "why" box would turn
+          adding a ritual into an exam, and the reason is often only clear
+          after a fortnight of keeping it. */}
+      <div className="mt-4">
+        <label htmlFor="habit-why" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500">
+          Why it matters <span className="text-ink-700">— optional</span>
+        </label>
+        <input
+          id="habit-why"
+          type="text"
+          value={why}
+          onChange={(e) => setWhy(e.target.value)}
+          placeholder="e.g. so I finish a book a month"
+          maxLength={WHY_LIMIT}
+          className="w-full rounded-lg border border-void-400 bg-void-100 px-3.5 py-2.5 text-sm text-ink-100 placeholder:text-ink-700 outline-none transition-colors focus:border-gold/60"
+        />
       </div>
 
       <div className="mt-4">

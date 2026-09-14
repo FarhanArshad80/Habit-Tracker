@@ -29,6 +29,19 @@ export const HABIT_COLORS = [
   { id: 'lime', label: 'Lime', hex: '#A3E635' },
 ];
 
+// The reason the ritual is on the board at all.
+//
+// A name says what to do and nothing about why it is worth doing, and on a
+// bad Tuesday the why is the only part that argues for getting up. It is a
+// sentence rather than an essay — short enough to be read in the half second
+// somebody spends on the card before deciding, and short enough to sit on
+// one line next to the name.
+export const WHY_LIMIT = 80;
+
+function cleanWhy(why) {
+  return typeof why === 'string' ? why.trim().slice(0, WHY_LIMIT) : '';
+}
+
 // Rest days. A goal cannot ask for more sessions than there are days to hold
 // them, so the weekly target is clamped to the schedule wherever one is set.
 function clampGoal(goal, schedule) {
@@ -62,11 +75,12 @@ export function HabitProvider({ children }) {
   // window closes.
   const [recentlyDeleted, setRecentlyDeleted] = useState(null);
 
-  const addHabit = useCallback(({ name, icon, color, goal, days }) => {
+  const addHabit = useCallback(({ name, icon, color, goal, days, why }) => {
     const schedule = normalizeSchedule(days);
     const habit = {
       id: createId(),
       name: name.trim(),
+      why: cleanWhy(why),
       icon: icon || HABIT_ICONS[0],
       color: color || HABIT_COLORS[0].id,
       days: schedule,
@@ -83,7 +97,7 @@ export function HabitProvider({ children }) {
   // happen in place so the streak, the trail and every recorded completion
   // survive the edit — the alternative was delete and start over, which
   // throws away the history that makes the app worth opening.
-  const editHabit = useCallback((habitId, { name, goal, days }) => {
+  const editHabit = useCallback((habitId, { name, goal, days, why }) => {
     setHabits((prev) => prev.map((h) => {
       if (h.id !== habitId) return h;
       const trimmed = typeof name === 'string' ? name.trim() : h.name;
@@ -91,6 +105,10 @@ export function HabitProvider({ children }) {
       return {
         ...h,
         name: trimmed || h.name,
+        // Cleared deliberately rather than only ever set: emptying the box
+        // is how a reason that has stopped being true gets taken off the
+        // card, so an empty string has to mean something here.
+        why: why === undefined ? cleanWhy(h.why) : cleanWhy(why),
         days: schedule,
         // Dropping to three days a week has to drag a 7x goal down with it,
         // or the ritual would be permanently short of a target it can no
@@ -250,6 +268,7 @@ export function HabitProvider({ children }) {
 
       return {
         ...h,
+        why: cleanWhy(h.why),
         days,
         pauses,
         paused,
