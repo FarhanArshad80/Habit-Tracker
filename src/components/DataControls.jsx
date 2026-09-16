@@ -5,14 +5,14 @@ import { backupFilename, parseBackup, serializeHabits } from '../utils/backup';
 
 const COLOR_IDS = HABIT_COLORS.map((c) => c.id);
 
-export default function DataControls({ habits, onReplace }) {
+export default function DataControls({ habits, notes = {}, onReplace }) {
   const fileRef = useRef(null);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(null);
   const [note, setNote] = useState('');
 
   function handleExport() {
-    const blob = new Blob([serializeHabits(habits)], { type: 'application/json' });
+    const blob = new Blob([serializeHabits(habits, notes)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
 
@@ -52,7 +52,7 @@ export default function DataControls({ habits, onReplace }) {
   }
 
   function confirmImport() {
-    onReplace(pending.habits);
+    onReplace(pending.habits, pending.notes);
     setNote(
       `Restored ${pending.habits.length} ritual${pending.habits.length === 1 ? '' : 's'}` +
         (pending.skipped > 0 ? ` · skipped ${pending.skipped} unreadable` : '.')

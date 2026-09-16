@@ -1,12 +1,14 @@
 import { createId } from './ids';
 import { todayKey, normalizeSchedule, normalizePauses } from './dateHelpers';
+import { sanitizeNotes } from './dayNotes';
 
-// 4 adds the reason a ritual is on the board. 3 added the days a ritual was
-// set aside. Until now the export dropped them
+// 5 adds the note kept against each day. 4 added the reason a ritual is on
+// the board. 3 added the days a ritual was set aside. Until now the export
+// dropped them
 // silently, so restoring a file turned every pause and every skipped day
 // back into a day that was owed and missed — the streak the restore was
 // meant to preserve was the first thing it broke.
-export const BACKUP_VERSION = 4;
+export const BACKUP_VERSION = 5;
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -22,12 +24,16 @@ export function backupFilename(date = new Date()) {
 // A file the app wrote a year ago should still open in the app a year from
 // now, so the export carries its own version number rather than assuming
 // today's shape is permanent.
-export function serializeHabits(habits) {
+export function serializeHabits(habits, notes = {}) {
   return JSON.stringify(
     {
       app: 'microgains',
       version: BACKUP_VERSION,
       exportedAt: new Date().toISOString(),
+      // The record of what was done and the record of what the days were
+      // like travel together. A backup that carried only the first would
+      // restore the grid and quietly lose every reason behind it.
+      notes: sanitizeNotes(notes),
       habits: habits.map((h) => ({
         id: h.id,
         name: h.name,
@@ -127,5 +133,11 @@ export function parseBackup(text, { icons, colors }) {
     throw new Error('There are no readable rituals in that file.');
   }
 
-  return { habits, skipped: data.habits.length - habits.length };
+  // `undefined` rather than `{}` when the file predates notes, so a restore
+  // can tell "this backup has nothing to say about notes" from "this backup
+  // says there are none" — and leave the ones on the device alone in the
+  // first case rather than wiping them to match a file that never had any.
+  const notes = 'notes' in data ? sanitizeNotes(data.notes) : undefined;
+
+  return { habits, notes, skipped: data.habits.length - habits.length };
 }

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useHabits } from './context/HabitContext';
 import StatsDashboard from './components/StatsDashboard';
 import DailyProgress from './components/DailyProgress';
+import DayNote from './components/DayNote';
 import ConsistencyGrid from './components/ConsistencyGrid';
 import WeekAhead from './components/WeekAhead';
 import AddHabitForm from './components/AddHabitForm';
@@ -19,7 +20,7 @@ export default function App() {
   const {
     habits, globalStats, recentlyDeleted, today, addHabit, editHabit, togglePause,
     toggleSkip, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
-    toggleCompletion, reorderHabits,
+    toggleCompletion, reorderHabits, notes,
   } = useHabits();
   // The date in the header comes from the same place every streak on the page
   // does, so the two cannot disagree after midnight.
@@ -129,6 +130,11 @@ export default function App() {
           {/* Daily completion bar */}
           <DailyProgress stats={globalStats} />
 
+          {/* And the half the bar cannot hold: why the day went the way it
+              did. Directly under the numbers it explains, while the day is
+              still close enough to remember. */}
+          <DayNote />
+
           {/* What is coming, before the record of what has been. Today's bar
               is above this and three months of history below it, so the page
               reads forward from the day rather than only backward. */}
@@ -191,7 +197,7 @@ export default function App() {
             <h2 className="font-display text-xs font-bold uppercase tracking-wider text-slate-500">
               Your data
             </h2>
-            <DataControls habits={habits} onReplace={replaceHabits} />
+            <DataControls habits={habits} notes={notes} onReplace={replaceHabits} />
           </section>
 
           {/* Footer */}

@@ -17,6 +17,7 @@ import {
   isScheduled,
   ALL_DAYS,
 } from '../utils/dateHelpers';
+import { capNote, normalizeNote, noteFor, sanitizeNotes, setNote } from '../utils/dayNotes';
 
 const HabitContext = createContext(null);
 
@@ -61,6 +62,12 @@ export const HABIT_ICONS = [
 
 export function HabitProvider({ children }) {
   const [habits, setHabits] = useLocalStorage('constellation.habits', []);
+
+  // What the days themselves were like, keyed by date. Kept in a second key
+  // rather than folded into the habits, because a note belongs to the day and
+  // not to any ritual in it — and because nothing already stored has to be
+  // migrated to make room for a store that starts empty.
+  const [storedNotes, setStoredNotes] = useLocalStorage('constellation.notes', {});
 
   // Every number on this board is measured from today, and "today" was being
   // read during render — which meant it only changed when something else
@@ -210,10 +217,28 @@ export function HabitProvider({ children }) {
   // A restore replaces the whole board rather than merging into it: a backup
   // is a picture of a moment, and half-merging one leaves a history that
   // never actually happened.
-  const replaceHabits = useCallback((next) => {
+  const replaceHabits = useCallback((next, nextNotes) => {
     setRecentlyDeleted(null);
     setHabits(next);
-  }, [setHabits]);
+
+    // A backup written before notes existed carries none, and passing
+    // `undefined` here has to mean "this file has nothing to say about
+    // notes" rather than "this file says there are none" — the second would
+    // wipe the notes on the device to restore a file that never had any.
+    if (nextNotes !== undefined) setStoredNotes(sanitizeNotes(nextNotes));
+  }, [setHabits, setStoredNotes]);
+
+  // While the sentence is being typed. Capped but not trimmed, so a space
+  // survives long enough to be followed by a word.
+  const writeNote = useCallback((dateKey, text) => {
+    setStoredNotes((prev) => setNote(prev, dateKey, capNote(text)));
+  }, [setStoredNotes]);
+
+  // Once it is finished — on blur, or when the day rolls over underneath it.
+  // This is where a box left holding nothing but spaces stops being a note.
+  const commitNote = useCallback((dateKey) => {
+    setStoredNotes((prev) => setNote(prev, dateKey, normalizeNote(noteFor(prev, dateKey))));
+  }, [setStoredNotes]);
 
   const toggleCompletion = useCallback((habitId, dateKey = today) => {
     setHabits((prev) => prev.map((h) => {
@@ -245,6 +270,10 @@ export function HabitProvider({ children }) {
       return next;
     });
   }, [setHabits]);
+
+  // Storage is shared with other tabs and with every build this app has ever
+  // been, so what comes out of it is checked before anything renders it.
+  const notes = useMemo(() => sanitizeNotes(storedNotes), [storedNotes]);
 
   const habitsWithStats = useMemo(() => (
     habits.map((h) => {
@@ -355,10 +384,13 @@ export function HabitProvider({ children }) {
     replaceHabits,
     toggleCompletion,
     reorderHabits,
+    notes,
+    writeNote,
+    commitNote,
   }), [
     habitsWithStats, globalStats, recentlyDeleted, today, addHabit, editHabit,
     togglePause, toggleSkip, deleteHabit, restoreHabit, dismissDeleted, replaceHabits,
-    toggleCompletion, reorderHabits,
+    toggleCompletion, reorderHabits, notes, writeNote, commitNote,
   ]);
 
   return (
