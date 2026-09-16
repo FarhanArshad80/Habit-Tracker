@@ -8,6 +8,7 @@ import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
 import HabitFilters, { habitFilter } from './components/HabitFilters';
 import HabitOrder, { sortHabits } from './components/HabitOrder';
+import HabitSearch, { canSearch, habitMatchesQuery } from './components/HabitSearch';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
 import DataControls from './components/DataControls';
@@ -47,10 +48,26 @@ export default function App() {
   // different questions — which rituals am I looking at, and which of them
   // do I want to see first.
   const [order, setOrder] = useState('manual');
+  // And the third axis: by name. The chips answer "which rituals are like
+  // this", the search answers "where is that one" — the question that only
+  // starts being asked once the board is long enough that scanning it is
+  // work.
+  const [query, setQuery] = useState('');
   const view = habitFilter(filter);
+  // The box hides itself on a short board, so the query it holds must stop
+  // counting at the same moment. Otherwise deleting a ritual could drop the
+  // board under the threshold and leave the list narrowed by a word with
+  // nothing on screen that says so, and no way to take it back.
+  const searching = canSearch(habits) && query.trim() !== '';
   const visible = useMemo(
-    () => sortHabits(habits.filter(view.match), order),
-    [habits, view, order]
+    () =>
+      sortHabits(
+        habits.filter(
+          (habit) => view.match(habit) && (!searching || habitMatchesQuery(habit, query))
+        ),
+        order
+      ),
+    [habits, view, order, searching, query]
   );
 
   return (
@@ -127,7 +144,10 @@ export default function App() {
             </h2>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <HabitFilters habits={habits} active={filter} onChange={setFilter} />
-              <HabitOrder habits={habits} active={order} onChange={setOrder} />
+              <div className="flex flex-wrap items-center gap-3">
+                <HabitSearch habits={habits} value={query} onChange={setQuery} />
+                <HabitOrder habits={habits} active={order} onChange={setOrder} />
+              </div>
             </div>
             <HabitList 
               habits={visible} 
@@ -141,9 +161,16 @@ export default function App() {
               // order. Under a filter that neighbour may be hidden, and
               // under a sort it is not the row above — either way the press
               // appears to do nothing, so the control is withdrawn rather
-              // than left to lie.
-              reorderable={filter === 'all' && order === 'manual'}
-              emptyMessage={habits.length > 0 ? view.empty : undefined}
+              // than left to lie. A search narrows the list the same way a
+              // filter does, and lies about the arrows for the same reason.
+              reorderable={filter === 'all' && order === 'manual' && !searching}
+              emptyMessage={
+                searching
+                  ? `No ritual matches “${query.trim()}”.`
+                  : habits.length > 0
+                    ? view.empty
+                    : undefined
+              }
             />
             <AddHabitForm onAdd={addHabit} />
           </section>
