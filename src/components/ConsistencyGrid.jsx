@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { X } from 'lucide-react';
 import {
   addDays, weekdayOf, isScheduled, isPausedOn, formatFriendlyDate,
 } from '../utils/dateHelpers';
+import { noteFor } from '../utils/dayNotes';
 import { useHabits } from '../context/HabitContext';
 
 const WEEKS = 12;
@@ -46,8 +48,15 @@ function scoreDay(habits, dateKey) {
 export default function ConsistencyGrid({ habits }) {
   // The last column of the grid is today's week, so the grid has to learn
   // about a new day at the same moment the rest of the board does.
-  const { today } = useHabits();
+  const { today, notes } = useHabits();
   const weeks = useMemo(() => buildWeeks(today), [today]);
+
+  // The day whose note is open under the grid. A note is written against
+  // today and, until now, could only ever be read on today: the box moves on
+  // at midnight and yesterday's sentence was never seen again. The grid is
+  // where the past already lives, so it is where the notes are read back —
+  // beside the square that says how that day went.
+  const [reading, setReading] = useState(null);
 
   const scores = useMemo(() => {
     const map = new Map();
@@ -64,6 +73,12 @@ export default function ConsistencyGrid({ habits }) {
 
   if (habits.length === 0) return null;
 
+  // Trimmed here rather than trusted, since today's note is stored as it is
+  // being typed and may still be nothing but a space.
+  const noteOn = (dateKey) => (dateKey > today ? '' : noteFor(notes, dateKey).trim());
+  const readingNote = reading ? noteOn(reading) : '';
+  const anyNotes = weeks.some((week) => week.some((dateKey) => noteOn(dateKey)));
+
   // Month names sit above the week a month first appears in, which is how
   // the eye finds "some time in July" without counting columns.
   const monthLabels = weeks.map((week, index) => {
@@ -79,8 +94,17 @@ export default function ConsistencyGrid({ habits }) {
         <span className="font-display text-xs font-bold uppercase tracking-wider text-ink-500">
           Last 12 weeks
         </span>
-        <span className="font-mono text-xs text-ink-700">
+        <span className="flex items-center gap-2 font-mono text-xs text-ink-700">
           less · more
+          {anyNotes && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="flex items-center gap-1">
+                <span className="h-1 w-1 rounded-full bg-teal" aria-hidden="true" />
+                note
+              </span>
+            </>
+          )}
         </span>
       </div>
 
@@ -108,21 +132,35 @@ export default function ConsistencyGrid({ habits }) {
               const future = dateKey > today;
               const score = scores.get(dateKey);
               const rate = score && score.due > 0 ? score.done / score.due : null;
+              const note = noteOn(dateKey);
+              const summary = future
+                ? ''
+                : `${formatFriendlyDate(dateKey)} — ${
+                    score.due === 0
+                      ? 'nothing due'
+                      : `${score.done} of ${score.due} done`
+                  }`;
+              // Only a day with something to read becomes a button. Making
+              // all eighty-four squares focusable would put eighty-four tab
+              // stops between the progress bar and the rituals.
+              const Cell = note ? 'button' : 'div';
 
               return (
-                <div
+                <Cell
                   key={dateKey}
-                  title={
-                    future
-                      ? ''
-                      : `${formatFriendlyDate(dateKey)} — ${
-                          score.due === 0
-                            ? 'nothing due'
-                            : `${score.done} of ${score.due} done`
-                        }`
-                  }
-                  className={`h-3 w-3 rounded-[3px] ${
+                  {...(note
+                    ? {
+                        type: 'button',
+                        onClick: () => setReading((open) => (open === dateKey ? null : dateKey)),
+                        'aria-pressed': reading === dateKey,
+                        'aria-label': `${summary}. Read the note.`,
+                      }
+                    : {})}
+                  title={note ? `${summary}\n“${note}”` : summary}
+                  className={`relative flex h-3 w-3 items-center justify-center rounded-[3px] ${
                     dateKey === today ? 'ring-1 ring-gold/70' : ''
+                  } ${reading === dateKey ? 'ring-1 ring-teal' : ''} ${
+                    note ? 'cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-teal' : ''
                   }`}
                   style={{
                     // Nothing due and nothing recorded are different days, so
@@ -139,12 +177,46 @@ export default function ConsistencyGrid({ habits }) {
                           ? '1px dashed rgba(139,147,167,0.25)'
                           : 'none',
                   }}
-                />
+                >
+                  {/* Inside the square rather than on its corner: the grid
+                      scrolls sideways, and a mark hanging off the last
+                      column would be clipped by the edge it sits against.
+                      Teal reads on a gold day and on an empty one alike. */}
+                  {note && (
+                    <span className="h-1 w-1 rounded-full bg-teal" aria-hidden="true" />
+                  )}
+                </Cell>
               );
             })}
           </div>
         ))}
       </div>
+
+      {/* Under the grid, not in a tooltip. A hover title never appears on a
+          phone, and the note is a sentence someone wrote to be read. */}
+      {readingNote && (
+        <div
+          className="mt-3 flex items-start gap-3 rounded-xl border border-teal/30 bg-teal-dim/30 px-3 py-2.5 animate-rise"
+          role="status"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-[11px] uppercase tracking-wider text-teal">
+              {formatFriendlyDate(reading)}
+            </p>
+            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-100">
+              {readingNote}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReading(null)}
+            aria-label="Close the note"
+            className="shrink-0 text-ink-500 transition-colors hover:text-ink-100"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
