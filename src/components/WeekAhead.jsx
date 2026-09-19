@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import {
   addDays, isDue, weekdayLabel, dayNumber, formatFriendlyDate,
 } from '../utils/dateHelpers';
+import { weekdayRhythm } from '../utils/perfectDays';
 import { useHabits } from '../context/HabitContext';
 
 // A week, starting today rather than on Monday. The question this answers is
@@ -29,6 +30,11 @@ export default function WeekAhead({ habits }) {
   // Nothing to plan around with a single ritual, and nothing to plan around
   // when every day asks for the same thing — which is what a board of daily
   // rituals is. The strip earns its place by showing that the days differ.
+  // Which weekday the board has actually been slipping on, over the same
+  // twelve weeks the grid below draws. Null unless the gap is wide enough to
+  // be a pattern rather than the ordinary wobble of a week.
+  const rhythm = useMemo(() => weekdayRhythm(habits, today), [habits, today]);
+
   const counts = days.map((day) => day.due.length);
   const heaviest = Math.max(...counts);
 
@@ -56,6 +62,19 @@ export default function WeekAhead({ habits }) {
           {heaviest} due
         </span>
       </div>
+
+      {/* Said under the columns, because it is about the weeks behind
+          rather than the one ahead — but it belongs here, where somebody is
+          looking at which day is going to be the work. The heaviest day and
+          the day that keeps going wrong are rarely the same day, and knowing
+          both is what makes the strip worth acting on. */}
+      {rhythm && (
+        <p className="mt-2 font-mono text-[11px] text-ink-700">
+          {rhythm.name}s are where this slips —{' '}
+          <span className="text-rose">{Math.round(rhythm.rate * 100)}% kept</span>
+          {' '}against {Math.round(rhythm.restRate * 100)}% the rest of the week
+        </p>
+      )}
 
       <ol className="mt-3 flex items-end gap-1.5">
         {days.map(({ dateKey, due }) => {

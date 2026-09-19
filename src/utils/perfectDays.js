@@ -9,7 +9,7 @@
 // done. It is the only figure here that cannot be had by quietly dropping
 // the ritual that keeps breaking, which is what makes it worth keeping.
 
-import { addDays, getLastNDays, isDue, todayKey } from './dateHelpers';
+import { addDays, getLastNDays, isDue, todayKey, weekdayOf, WEEKDAY_NAMES } from './dateHelpers';
 
 // What a single day asked for and what it got. Rituals created after the day
 // in question were never owed on it - counting them would open a new board
@@ -95,5 +95,67 @@ export function perfectDayStats(habits, today = todayKey(), window = PERFECT_WIN
     perfect,
     owedDays,
     window,
+  };
+}
+
+// Which weekday this board actually slips on.
+//
+// Each ritual already works out its own weakest day, which is the right
+// measure for one ritual and a poor one for a week: four rituals each
+// limping on a different day say nothing, while four all failing on Friday
+// is the single most useful thing the board could tell anybody. That pattern
+// only appears when the days are pooled.
+//
+// Twelve weeks, so a run of holidays does not decide the answer, and so it
+// matches the window the consistency grid draws.
+export const RHYTHM_WINDOW = 84;
+
+// A day this far below the rest of the week is a habit of its own rather
+// than noise. Below it, naming a "worst day" would be reading meaning into
+// the ordinary wobble of any week.
+const RHYTHM_GAP = 0.15;
+
+export function weekdayRhythm(habits, today = todayKey(), window = RHYTHM_WINDOW) {
+  const days = getLastNDays(window, today);
+  const byWeekday = Array.from({ length: 7 }, () => ({ owed: 0, done: 0 }));
+
+  for (const dateKey of days) {
+    // Today is still in progress. Counting it would charge the board for
+    // everything not yet done this morning.
+    if (dateKey === today) continue;
+
+    const { owed, done } = dayScore(habits, dateKey);
+
+    if (owed === 0) continue;
+
+    const bucket = byWeekday[weekdayOf(dateKey)];
+
+    bucket.owed += owed;
+    bucket.done += done;
+  }
+
+  // A weekday needs a few showings before its rate means anything: one bad
+  // Tuesday should not become "Tuesdays are your problem".
+  const rated = byWeekday
+    .map((bucket, weekday) => ({ ...bucket, weekday, rate: bucket.owed ? bucket.done / bucket.owed : null }))
+    .filter((day) => day.owed >= 3 && day.rate !== null);
+
+  if (rated.length < 3) return null;
+
+  const worst = rated.reduce((low, day) => (day.rate < low.rate ? day : low));
+  const others = rated.filter((day) => day.weekday !== worst.weekday);
+  const restRate =
+    others.reduce((sum, day) => sum + day.done, 0) /
+    others.reduce((sum, day) => sum + day.owed, 0);
+
+  if (restRate - worst.rate < RHYTHM_GAP) return null;
+
+  return {
+    weekday: worst.weekday,
+    name: WEEKDAY_NAMES[worst.weekday],
+    rate: worst.rate,
+    restRate,
+    kept: worst.done,
+    owed: worst.owed,
   };
 }
