@@ -104,7 +104,13 @@ export function HabitProvider({ children }) {
   // happen in place so the streak, the trail and every recorded completion
   // survive the edit — the alternative was delete and start over, which
   // throws away the history that makes the app worth opening.
-  const editHabit = useCallback((habitId, { name, goal, days, why }) => {
+  //
+  // The look travels with the name. A colour picked in thirty seconds at
+  // creation tints the card, the flame, the trail and the ritual's whole
+  // column in the grid, and it was the one part of a ritual that could never
+  // be changed afterwards — two rituals landing on the same gold stayed
+  // indistinguishable for as long as both were tracked.
+  const editHabit = useCallback((habitId, { name, goal, days, why, icon, color }) => {
     setHabits((prev) => prev.map((h) => {
       if (h.id !== habitId) return h;
       const trimmed = typeof name === 'string' ? name.trim() : h.name;
@@ -112,6 +118,12 @@ export function HabitProvider({ children }) {
       return {
         ...h,
         name: trimmed || h.name,
+        // Unlike the reason, these cannot be cleared — there is no card
+        // without an icon and a colour — so anything unrecognised falls back
+        // to what the ritual already wears rather than to a default that
+        // would silently repaint it.
+        icon: HABIT_ICONS.includes(icon) ? icon : h.icon,
+        color: HABIT_COLORS.some((c) => c.id === color) ? color : h.color,
         // Cleared deliberately rather than only ever set: emptying the box
         // is how a reason that has stopped being true gets taken off the
         // card, so an empty string has to mean something here.

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
-import { HABIT_COLORS, WHY_LIMIT } from '../context/HabitContext';
+import { HABIT_COLORS, HABIT_ICONS, WHY_LIMIT } from '../context/HabitContext';
 import {
   getLastNDays, formatFriendlyDate, isDue, isPausedOn, isSkippedOn,
 } from '../utils/dateHelpers';
@@ -49,12 +49,18 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   const [draftWhy, setDraftWhy] = useState(habit.why || '');
   const [draftGoal, setDraftGoal] = useState(habit.weeklyGoal);
   const [draftDays, setDraftDays] = useState(habit.days);
+  const [draftIcon, setDraftIcon] = useState(habit.icon);
+  const [draftColor, setDraftColor] = useState(habit.color);
   const [editError, setEditError] = useState('');
   // The trail ends on the board's today, not on whatever the clock says
   // during this particular render.
   const { today } = useHabits();
   const Icon = resolveIcon(habit.icon);
   const hex = colorHex(habit.color);
+  // What the form is proposing, as opposed to what is saved. Only the
+  // pickers read it; the rest of the card keeps showing the ritual as it
+  // stands until Save is pressed.
+  const draftHex = colorHex(draftColor);
   const trail = getLastNDays(TRAIL_LENGTH, today);
   const completedSet = new Set(habit.completions);
 
@@ -65,6 +71,8 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
     setDraftWhy(habit.why || '');
     setDraftGoal(habit.weeklyGoal);
     setDraftDays(habit.days);
+    setDraftIcon(habit.icon);
+    setDraftColor(habit.color);
     setEditError('');
     setEditing(true);
   }
@@ -100,6 +108,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
 
     onEdit(habit.id, {
       name: trimmed, why: draftWhy, goal: Number(draftGoal), days: draftDays,
+      icon: draftIcon, color: draftColor,
     });
     setEditing(false);
   }
@@ -206,6 +215,61 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
                     onChange={chooseDraftDays}
                     idPrefix={habit.id}
                   />
+                </div>
+                {/* Last in the form, because it is the part least likely to
+                    be what the edit was opened for — and tinted live from the
+                    draft rather than the saved colour, so the swatch being
+                    considered is the one the card is wearing while it is
+                    being considered. */}
+                <div className="w-full">
+                  <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-ink-500">
+                    Look
+                  </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex flex-wrap gap-1">
+                      {HABIT_ICONS.map((iconName) => {
+                        const IconComp = resolveIcon(iconName);
+                        const active = draftIcon === iconName;
+                        return (
+                          <button
+                            key={iconName}
+                            type="button"
+                            onClick={() => setDraftIcon(iconName)}
+                            aria-label={iconName}
+                            aria-pressed={active}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors"
+                            style={{
+                              borderColor: active ? draftHex : 'rgba(139,147,167,0.25)',
+                              backgroundColor: active ? `${draftHex}1A` : 'transparent',
+                              color: active ? draftHex : undefined,
+                            }}
+                          >
+                            <IconComp className="h-4 w-4" strokeWidth={1.75} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {HABIT_COLORS.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setDraftColor(c.id)}
+                          aria-label={c.label}
+                          aria-pressed={draftColor === c.id}
+                          className="h-6 w-6 rounded-full transition-transform"
+                          style={{
+                            backgroundColor: c.hex,
+                            transform: draftColor === c.id ? 'scale(1.15)' : 'scale(1)',
+                            boxShadow:
+                              draftColor === c.id
+                                ? `0 0 0 2px #131826, 0 0 0 4px ${c.hex}`
+                                : 'none',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 {editError && (
                   <p className="w-full text-xs text-rose">{editError}</p>
