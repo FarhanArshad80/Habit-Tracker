@@ -17,34 +17,80 @@ function formatTime(totalSeconds) {
   return `${m}:${s}`;
 }
 
-export default function FocusTimer({ habits, onFinish }) {
+export default function FocusTimer({ habits, onFinish, onCountdown }) {
   const [durationSeconds, setDurationSeconds] = useState(PRESETS[2].seconds);
   const [remaining, setRemaining] = useState(PRESETS[2].seconds);
   const [running, setRunning] = useState(false);
   const [linkedHabitId, setLinkedHabitId] = useState('');
   const [justFinished, setJustFinished] = useState(false);
-  const intervalRef = useRef(null);
+  // When this session is due to end, in wall-clock time.
+  //
+  // The countdown used to be a subtraction per tick, which made the timer a
+  // count of the ticks the browser chose to deliver rather than of the time
+  // that passed. A hidden tab gets those ticks slowed to about one a minute,
+  // so a 25-minute session ran for the better part of an hour — and hidden
+  // is exactly where this tab is during a focus session. Holding the
+  // deadline instead makes every tick a reading rather than an increment,
+  // and a missed one costs nothing.
+  const endAtRef = useRef(null);
+  // Read by the tick rather than closed over by it, so a ritual chosen after
+  // the timer started is still the one marked off when it ends.
+  const linkedRef = useRef(linkedHabitId);
+  const finishRef = useRef(onFinish);
+
+  linkedRef.current = linkedHabitId;
+  finishRef.current = onFinish;
 
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setRemaining((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current);
-            setRunning(false);
-            setJustFinished(true);
-            if (linkedHabitId) {
-              onFinish(linkedHabitId);
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(intervalRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!running) return undefined;
+
+    const tick = () => {
+      const left = Math.max(0, Math.round((endAtRef.current - Date.now()) / 1000));
+
+      setRemaining(left);
+
+      if (left > 0) return;
+
+      endAtRef.current = null;
+      setRunning(false);
+      setJustFinished(true);
+
+      if (linkedRef.current) finishRef.current(linkedRef.current);
+    };
+
+    // Twice a second, so the last digit turns over when it should rather
+    // than up to a second late.
+    const id = setInterval(tick, 500);
+
+    // Coming back to the tab is the moment the reading is most likely to be
+    // stale and most likely to be looked at, so it is re-read then rather
+    // than waited for.
+    document.addEventListener('visibilitychange', tick);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
   }, [running]);
+
+  // What the tab strip is told, in whole minutes.
+  //
+  // The point of a focus session is that this tab is not the one being
+  // looked at, which left the timer running somewhere nobody could see it —
+  // the app's own argument for putting what is owed today in the title.
+  //
+  // Minutes rather than seconds: a tab title that changes every second is a
+  // flicker in the corner of the eye, and "how long have I got" is not a
+  // question anybody asks a tab strip to the second. Rounded up, so a
+  // running session never reads 0m.
+  const minutesLeft = running ? Math.ceil(remaining / 60) : null;
+
+  useEffect(() => {
+    onCountdown?.(minutesLeft);
+  }, [minutesLeft, onCountdown]);
+
+  // A timer that is unmounted is not running, whatever the tab last said.
+  useEffect(() => () => onCountdown?.(null), [onCountdown]);
 
   useEffect(() => {
     if (justFinished) {
@@ -57,17 +103,25 @@ export default function FocusTimer({ habits, onFinish }) {
     setDurationSeconds(seconds);
     setRemaining(seconds);
     setRunning(false);
+    endAtRef.current = null;
     setJustFinished(false);
   }
 
   function toggleRunning() {
     if (remaining === 0) return;
     setJustFinished(false);
+
+    // Starting sets the deadline from what is left, so pausing for a minute
+    // costs the session nothing and resuming does not have to recover it.
+    if (!running) endAtRef.current = Date.now() + remaining * 1000;
+    else endAtRef.current = null;
+
     setRunning((r) => !r);
   }
 
   function reset() {
     setRunning(false);
+    endAtRef.current = null;
     setRemaining(durationSeconds);
     setJustFinished(false);
   }

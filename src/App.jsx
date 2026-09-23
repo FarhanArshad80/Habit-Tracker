@@ -36,7 +36,22 @@ export default function App() {
   // goes right. Nothing at all when nothing is due, because a rest day is
   // not an achievement and a badge on it would be noise.
   const owed = globalStats.dueToday - globalStats.completedToday;
-  const tabMarker = owed > 0 ? `(${owed})` : globalStats.dueToday > 0 ? '✓' : '';
+
+  // Minutes left on a focus session, while one is running. Held here rather
+  // than in the timer because the title has one slot and three things that
+  // want it, and something has to decide between them.
+  //
+  // A running session wins the slot. The count of what is owed is a standing
+  // fact that will still be true in ten minutes; a session is the one thing
+  // on this board that is ending at a particular moment, and the tab strip
+  // is where it can be watched without breaking the focus it is timing.
+  const [focusMinutes, setFocusMinutes] = useState(null);
+  const tabMarker =
+    focusMinutes !== null
+      ? `${focusMinutes}m`
+      : owed > 0
+        ? `(${owed})`
+        : globalStats.dueToday > 0 ? '✓' : '';
 
   useDocumentTitle(tabMarker);
 
@@ -189,6 +204,7 @@ export default function App() {
             <FocusTimer 
               habits={habits} 
               onFinish={(habitId) => toggleCompletion(habitId, today)} 
+              onCountdown={setFocusMinutes}
             />
           </aside>
 
