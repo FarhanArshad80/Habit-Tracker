@@ -11,6 +11,36 @@ const PRESETS = [
 const RADIUS = 54;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
+// Two soft notes, rising — a bell rather than an alarm. The session is
+// over, not on fire, and whoever hears it is usually in the middle of the
+// sentence the session was for.
+const CHIME_NOTES = [
+  { freq: 659.25, at: 0 },
+  { freq: 987.77, at: 0.18 },
+];
+
+function playChime(ctx) {
+  if (!ctx) return;
+
+  for (const { freq, at } of CHIME_NOTES) {
+    const start = ctx.currentTime + at;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    // A quick swell and a long tail, so it reads as struck rather than
+    // switched on.
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.2);
+
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + 1.25);
+  }
+}
+
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
   const s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
@@ -37,6 +67,11 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   // the timer started is still the one marked off when it ends.
   const linkedRef = useRef(linkedHabitId);
   const finishRef = useRef(onFinish);
+  // The sound the session ends on. A browser will only let a page make a
+  // noise it was asked to make, so the context is opened by the press of
+  // Start and kept — by the time the session ends the tab is hidden and
+  // nobody is there to press anything.
+  const audioRef = useRef(null);
 
   linkedRef.current = linkedHabitId;
   finishRef.current = onFinish;
@@ -54,6 +89,8 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
       endAtRef.current = null;
       setRunning(false);
       setJustFinished(true);
+
+      playChime(audioRef.current);
 
       if (linkedRef.current) finishRef.current(linkedRef.current);
     };
@@ -92,6 +129,13 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   // A timer that is unmounted is not running, whatever the tab last said.
   useEffect(() => () => onCountdown?.(null), [onCountdown]);
 
+  // An open audio context holds on to the sound device, so it goes when the
+  // timer does.
+  useEffect(() => () => {
+    audioRef.current?.close?.();
+    audioRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (justFinished) {
       const t = setTimeout(() => setJustFinished(false), 4000);
@@ -110,6 +154,15 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   function toggleRunning() {
     if (remaining === 0) return;
     setJustFinished(false);
+
+    // Opened here because this is a click. A browser without Web Audio
+    // just finishes silently, as the timer always has.
+    if (!running) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+
+      if (!audioRef.current && AudioCtx) audioRef.current = new AudioCtx();
+      audioRef.current?.resume?.()?.catch?.(() => {});
+    }
 
     // Starting sets the deadline from what is left, so pausing for a minute
     // costs the session nothing and resuming does not have to recover it.
