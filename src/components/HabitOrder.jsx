@@ -59,10 +59,14 @@ export function sortHabits(habits, id) {
   return compare ? [...habits].sort(compare) : habits;
 }
 
+// Nothing to stack with two rituals, and the control would take more room
+// than the list it reorders.
+export function canOrder(habits) {
+  return habits.length >= 3;
+}
+
 export default function HabitOrder({ habits, active, onChange }) {
-  // Nothing to stack with two rituals, and the chips would take more room
-  // than the list they reorder.
-  if (habits.length < 3) return null;
+  if (!canOrder(habits)) return null;
 
   return (
     <label className="flex items-center gap-2 text-ink-500">

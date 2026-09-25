@@ -43,10 +43,14 @@ export function habitFilter(id) {
   return HABIT_FILTERS.find((view) => view.id === id) || HABIT_FILTERS[0];
 }
 
+// With one ritual there is nothing to sift, and a row of chips above a
+// single line is furniture rather than a tool.
+export function canFilter(habits) {
+  return habits.length >= 2;
+}
+
 export default function HabitFilters({ habits, active, onChange }) {
-  // With one ritual there is nothing to sift, and a row of chips above a
-  // single line is furniture rather than a tool.
-  if (habits.length < 2) return null;
+  if (!canFilter(habits)) return null;
 
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="Filter rituals">

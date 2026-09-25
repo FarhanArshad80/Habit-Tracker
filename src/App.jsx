@@ -7,13 +7,14 @@ import ConsistencyGrid from './components/ConsistencyGrid';
 import WeekAhead from './components/WeekAhead';
 import AddHabitForm from './components/AddHabitForm';
 import HabitList from './components/HabitList';
-import HabitFilters, { habitFilter } from './components/HabitFilters';
-import HabitOrder, { sortHabits } from './components/HabitOrder';
+import HabitFilters, { canFilter, habitFilter } from './components/HabitFilters';
+import HabitOrder, { canOrder, habitOrder, sortHabits } from './components/HabitOrder';
 import HabitSearch, { canSearch, habitMatchesQuery } from './components/HabitSearch';
 import FocusTimer from './components/FocusTimer';
 import UndoBanner from './components/UndoBanner';
 import DataControls from './components/DataControls';
 import { useDocumentTitle } from './hooks/useDocumentTitle';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import { formatFriendlyDate } from './utils/dateHelpers';
 
 export default function App() {
@@ -59,16 +60,29 @@ export default function App() {
   // list stops being something you read and becomes something you scan, and
   // "what is still owed today" is the question it is usually being scanned
   // for.
-  const [filter, setFilter] = useState('all');
+  //
+  // Both this and the order below are kept between visits. Somebody who
+  // reads the board by what needs attention reads it that way every
+  // morning, and picking the view again on every open was a chore paid
+  // each day for a decision already made. Kept out of the backup: it is how
+  // this device is read, not part of the record.
+  const [storedFilter, setFilter] = useLocalStorage('constellation.view.filter', 'all');
   // And in what order. Kept apart from the filter because they answer
   // different questions — which rituals am I looking at, and which of them
   // do I want to see first.
-  const [order, setOrder] = useState('manual');
+  const [storedOrder, setOrder] = useLocalStorage('constellation.view.order', 'manual');
   // And the third axis: by name. The chips answer "which rituals are like
   // this", the search answers "where is that one" — the question that only
   // starts being asked once the board is long enough that scanning it is
-  // work.
+  // work. Not remembered: a word typed yesterday is not today's question.
   const [query, setQuery] = useState('');
+  // Whatever came out of storage is run back through the known views, so a
+  // value from another build cannot leave no chip lit. And like the search
+  // below, each only counts while its control is on screen — a view
+  // remembered from a longer board must not quietly narrow a shorter one
+  // that has nothing on it to say so, or to take it back.
+  const filter = canFilter(habits) ? habitFilter(storedFilter).id : 'all';
+  const order = canOrder(habits) ? habitOrder(storedOrder).id : 'manual';
   const view = habitFilter(filter);
   // The box hides itself on a short board, so the query it holds must stop
   // counting at the same moment. Otherwise deleting a ritual could drop the
