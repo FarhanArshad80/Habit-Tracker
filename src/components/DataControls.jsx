@@ -1,32 +1,47 @@
 import { useRef, useState } from 'react';
-import { Download, Upload, AlertTriangle } from 'lucide-react';
+import { Download, Upload, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import { HABIT_COLORS, HABIT_ICONS } from '../context/HabitContext';
 import { backupFilename, parseBackup, serializeHabits } from '../utils/backup';
+import { habitsToCsv, spreadsheetFilename } from '../utils/spreadsheet';
 
 const COLOR_IDS = HABIT_COLORS.map((c) => c.id);
 
-export default function DataControls({ habits, notes = {}, onReplace }) {
+export default function DataControls({ habits, notes = {}, today, onReplace }) {
   const fileRef = useRef(null);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(null);
   const [note, setNote] = useState('');
 
-  function handleExport() {
-    const blob = new Blob([serializeHabits(habits, notes)], { type: 'application/json' });
+  function download(text, type, filename) {
+    const blob = new Blob([text], { type });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = backupFilename();
+    link.download = filename;
     link.click();
 
     // Revoked on the next task rather than inline: the save is kicked off by
     // the click but not necessarily finished by the time it returns, and
     // pulling the URL out from under it cancels the download.
     setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function handleExport() {
+    download(serializeHabits(habits, notes), 'application/json', backupFilename());
 
     setError('');
     setNote(`Saved ${habits.length} ritual${habits.length === 1 ? '' : 's'}.`);
+  }
+
+  // Not a backup, and said so: nothing in it can be restored, because a
+  // sheet somebody has sorted and annotated is no longer a faithful record
+  // and the app should not pretend to read one back.
+  function handleSpreadsheet() {
+    download(habitsToCsv(habits, notes, today), 'text/csv;charset=utf-8', spreadsheetFilename());
+
+    setError('');
+    setNote('Saved every day as a row — for reading in a spreadsheet, not for restoring.');
   }
 
   async function handleFile(event) {
@@ -71,6 +86,16 @@ export default function DataControls({ habits, notes = {}, onReplace }) {
         >
           <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
           Export backup
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSpreadsheet}
+          disabled={habits.length === 0}
+          className="flex items-center gap-1.5 rounded-lg border border-void-400 px-3 py-1.5 text-xs font-medium text-ink-300 transition-colors hover:border-void-500 hover:text-ink-100 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <FileSpreadsheet className="h-3.5 w-3.5" strokeWidth={1.75} />
+          Spreadsheet (CSV)
         </button>
 
         <button

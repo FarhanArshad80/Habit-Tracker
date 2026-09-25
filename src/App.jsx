@@ -227,7 +227,7 @@ export default function App() {
             <h2 className="font-display text-xs font-bold uppercase tracking-wider text-slate-500">
               Your data
             </h2>
-            <DataControls habits={habits} notes={notes} onReplace={replaceHabits} />
+            <DataControls habits={habits} notes={notes} today={today} onReplace={replaceHabits} />
           </section>
 
           {/* Footer */}
