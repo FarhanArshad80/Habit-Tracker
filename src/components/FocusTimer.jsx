@@ -110,6 +110,23 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
     };
   }, [running]);
 
+  // A running session lives only in this tab. Closing it, or reloading it,
+  // ends the session silently and the linked ritual is never marked — so
+  // while one is running the browser is asked to confirm before leaving.
+  // Nothing is asked while the timer is stopped.
+  useEffect(() => {
+    if (!running) return undefined;
+
+    const onBeforeUnload = (event) => {
+      event.preventDefault();
+      // Older browsers only show the prompt when this is set.
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [running]);
+
   // What the tab strip is told, in whole minutes.
   //
   // The point of a focus session is that this tab is not the one being
