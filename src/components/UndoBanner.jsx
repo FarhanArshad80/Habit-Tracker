@@ -25,6 +25,35 @@ export default function UndoBanner({ pending, onRestore, onDismiss }) {
     };
   }, [pending, onDismiss]);
 
+  // Ctrl+Z (or Cmd+Z) does what the button does, for as long as the banner
+  // is up. It is the key everybody already reaches for after deleting the
+  // wrong thing, and the banner sits at the bottom of the screen, a long
+  // way from the card that was just removed.
+  //
+  // Left alone while something is being typed into, where Ctrl+Z already
+  // means "undo my typing" and taking it would restore a ritual instead.
+  useEffect(() => {
+    if (!pending) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key.toLowerCase() !== 'z' || !(event.ctrlKey || event.metaKey)) return;
+      if (event.shiftKey || event.altKey) return;
+
+      const target = event.target;
+      const tag = target?.tagName;
+
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) {
+        return;
+      }
+
+      event.preventDefault();
+      onRestore();
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [pending, onRestore]);
+
   if (!pending) return null;
 
   const { habit } = pending;
@@ -52,6 +81,8 @@ export default function UndoBanner({ pending, onRestore, onDismiss }) {
         <button
           type="button"
           onClick={onRestore}
+          aria-keyshortcuts="Control+Z Meta+Z"
+          title="Undo (Ctrl+Z)"
           className="flex shrink-0 items-center gap-1.5 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-void-100 transition-colors hover:bg-gold-soft"
         >
           <Undo2 className="h-3.5 w-3.5" strokeWidth={2.25} />
