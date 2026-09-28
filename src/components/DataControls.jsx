@@ -3,14 +3,43 @@ import { Download, Upload, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import { HABIT_COLORS, HABIT_ICONS } from '../context/HabitContext';
 import { backupFilename, parseBackup, serializeHabits } from '../utils/backup';
 import { habitsToCsv, spreadsheetFilename } from '../utils/spreadsheet';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const COLOR_IDS = HABIT_COLORS.map((c) => c.id);
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Past this, a backup is old enough that losing the browser's storage would
+// cost more than a few days' check-ins, and the line says so in colour.
+const BACKUP_STALE_DAYS = 14;
+
+function daysBetween(fromKey, toKey) {
+  const [fy, fm, fd] = fromKey.split('-').map(Number);
+  const [ty, tm, td] = toKey.split('-').map(Number);
+
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86400000);
+}
+
+function backupAge(lastKey, today) {
+  if (!lastKey || !DATE_KEY.test(lastKey)) return null;
+
+  const days = Math.max(0, daysBetween(lastKey, today));
+
+  if (days === 0) return { days, text: 'today' };
+  if (days === 1) return { days, text: 'yesterday' };
+  return { days, text: `${days} days ago` };
+}
 
 export default function DataControls({ habits, notes = {}, today, onReplace }) {
   const fileRef = useRef(null);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(null);
   const [note, setNote] = useState('');
+  // The day the last backup was saved from this browser. The footer tells
+  // everyone to keep one, and nothing on the page said whether they had —
+  // or whether the one they had was from last spring.
+  const [lastBackup, setLastBackup] = useLocalStorage('constellation.lastBackup', null);
+  const age = backupAge(lastBackup, today);
 
   function download(text, type, filename) {
     const blob = new Blob([text], { type });
@@ -29,6 +58,7 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
 
   function handleExport() {
     download(serializeHabits(habits, notes), 'application/json', backupFilename());
+    setLastBackup(today);
 
     setError('');
     setNote(`Saved ${habits.length} ritual${habits.length === 1 ? '' : 's'}.`);
@@ -142,6 +172,12 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
             Cancel
           </button>
         </div>
+      )}
+
+      {habits.length > 0 && (
+        <p className={`font-mono text-[11px] ${age && age.days < BACKUP_STALE_DAYS ? 'text-ink-700' : 'text-gold/80'}`}>
+          {age ? `Last backup saved ${age.text}.` : 'No backup saved from this browser yet.'}
+        </p>
       )}
 
       {error && <p className="text-xs text-rose">{error}</p>}
