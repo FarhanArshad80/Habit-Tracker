@@ -87,6 +87,15 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
     requestAnimationFrame(() => editButtonRef.current?.focus());
   }
 
+  // The same courtesy for the delete confirmation. The bin that opened it
+  // is replaced by the confirm buttons, so backing out returns focus to it.
+  const deleteButtonRef = useRef(null);
+
+  function cancelDelete() {
+    setConfirmingDelete(false);
+    requestAnimationFrame(() => deleteButtonRef.current?.focus());
+  }
+
   function chooseDraftDays(next) {
     setDraftDays(next);
     setDraftGoal((current) => Math.min(Number(current), next.length));
@@ -381,7 +390,14 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
               )}
 
               {confirmingDelete ? (
-                <div className="flex items-center gap-1.5 animate-rise">
+                <div
+                  className="flex items-center gap-1.5 animate-rise"
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Escape') return;
+                    e.preventDefault();
+                    cancelDelete();
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => onDelete(habit.id)}
@@ -389,9 +405,13 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                   >
                     Delete
                   </button>
+                  {/* Focus lands on Cancel, not Delete. The bin was reached
+                      by keyboard, and a second Enter pressed out of habit
+                      should be the harmless answer. Escape backs out too. */}
                   <button
                     type="button"
-                    onClick={() => setConfirmingDelete(false)}
+                    onClick={cancelDelete}
+                    autoFocus
                     className="rounded-md px-2 py-1 text-xs font-medium text-ink-500 hover:text-ink-300"
                   >
                     Cancel
@@ -460,6 +480,7 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                     <Pencil className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                   <button
+                    ref={deleteButtonRef}
                     type="button"
                     onClick={() => setConfirmingDelete(true)}
                     aria-label={`Delete "${habit.name}"`}
