@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS, HABIT_ICONS, WHY_LIMIT } from '../context/HabitContext';
@@ -75,6 +75,16 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
     setDraftColor(habit.color);
     setEditError('');
     setEditing(true);
+  }
+
+  // Backing out hands focus to the pencil that opened the edit. The field
+  // that had it is gone once the form closes, and without this a keyboard
+  // user is dropped back at the top of the page.
+  const editButtonRef = useRef(null);
+
+  function cancelEdit() {
+    setEditing(false);
+    requestAnimationFrame(() => editButtonRef.current?.focus());
   }
 
   function chooseDraftDays(next) {
@@ -158,7 +168,18 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             {editing ? (
-              <form onSubmit={saveEdit} className="flex w-full flex-wrap items-center gap-2">
+              <form
+                onSubmit={saveEdit}
+                // Escape backs out of the edit from any field in it, the
+                // same way it backs out of the search box. The draft is
+                // thrown away and the card goes back to what is saved.
+                onKeyDown={(e) => {
+                  if (e.key !== 'Escape') return;
+                  e.preventDefault();
+                  cancelEdit();
+                }}
+                className="flex w-full flex-wrap items-center gap-2"
+              >
                 <input
                   type="text"
                   value={draftName}
@@ -186,7 +207,7 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditing(false)}
+                  onClick={cancelEdit}
                   className="rounded-md px-2 py-1.5 text-xs font-medium text-ink-500 hover:text-ink-300"
                 >
                   Cancel
@@ -430,6 +451,7 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                       : <Pause className="h-4 w-4" strokeWidth={1.75} />}
                   </button>
                   <button
+                    ref={editButtonRef}
                     type="button"
                     onClick={startEditing}
                     aria-label={`Edit "${habit.name}"`}
