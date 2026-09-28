@@ -37,7 +37,6 @@ export default function HabitList({
           habit={habit}
           index={index}
           total={habits.length}
-          siblings={habits}
           onToggle={onToggle}
           onDelete={onDelete}
           onMove={onMove}

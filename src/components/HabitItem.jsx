@@ -42,7 +42,7 @@ function colorHex(colorId) {
   return HABIT_COLORS.find((c) => c.id === colorId)?.hex || '#F2B705';
 }
 
-export default function HabitItem({ habit, index, total, siblings, onToggle, onDelete, onMove, onEdit, onTogglePause, onToggleSkip, reorderable = true }) {
+export default function HabitItem({ habit, index, total, onToggle, onDelete, onMove, onEdit, onTogglePause, onToggleSkip, reorderable = true }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(habit.name);
@@ -54,7 +54,7 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
   const [editError, setEditError] = useState('');
   // The trail ends on the board's today, not on whatever the clock says
   // during this particular render.
-  const { today } = useHabits();
+  const { today, habits: board } = useHabits();
   const Icon = resolveIcon(habit.icon);
   const hex = colorHex(habit.color);
   // What the form is proposing, as opposed to what is saved. Only the
@@ -95,8 +95,10 @@ export default function HabitItem({ habit, index, total, siblings, onToggle, onD
       return;
     }
     // The same clash the add form rejects — except a ritual is allowed to
-    // keep the name it already has.
-    const clash = siblings.some(
+    // keep the name it already has. Checked against the whole board rather
+    // than the rows on screen: under a filter or a search the list is only a
+    // slice of it, and a name can clash with a ritual that is hidden.
+    const clash = board.some(
       (other) =>
         other.id !== habit.id &&
         other.name.trim().toLowerCase() === trimmed.toLowerCase()
