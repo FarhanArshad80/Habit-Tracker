@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pause, Play, RotateCcw, Timer as TimerIcon } from 'lucide-react';
+import { Pause, Play, Plus, RotateCcw, Timer as TimerIcon } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const PRESETS = [
@@ -8,6 +8,10 @@ const PRESETS = [
   { label: '25m', seconds: 25 * 60 },
   { label: '45m', seconds: 45 * 60 },
 ];
+
+// What "a little longer" buys. Long enough to finish the paragraph, short
+// enough that it is still an extension and not a second session.
+const EXTEND_SECONDS = 5 * 60;
 
 const RADIUS = 54;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -63,6 +67,10 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
     : PRESETS[2].seconds;
   const [durationSeconds, setDurationSeconds] = useState(initialLength);
   const [remaining, setRemaining] = useState(initialLength);
+  // Minutes added to this session on top of the preset. Kept apart from the
+  // preset so the chip stays lit and Reset goes back to the length picked,
+  // not to whatever the session had grown into.
+  const [extraSeconds, setExtraSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [linkedHabitId, setLinkedHabitId] = useState('');
   const [justFinished, setJustFinished] = useState(false);
@@ -176,6 +184,7 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   function selectPreset(seconds) {
     setStoredLength(seconds);
     setDurationSeconds(seconds);
+    setExtraSeconds(0);
     setRemaining(seconds);
     setRunning(false);
     endAtRef.current = null;
@@ -206,11 +215,25 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   function reset() {
     setRunning(false);
     endAtRef.current = null;
+    setExtraSeconds(0);
     setRemaining(durationSeconds);
     setJustFinished(false);
   }
 
-  const progress = durationSeconds === 0 ? 0 : (durationSeconds - remaining) / durationSeconds;
+  // Five more minutes without stopping. The alternative was to let the
+  // session end, pick a preset, and start again — which breaks the very
+  // concentration the timer is for, just as the work is going well.
+  // Moving the deadline is enough: every tick reads from it.
+  function extend() {
+    if (!running || !endAtRef.current) return;
+
+    endAtRef.current += EXTEND_SECONDS * 1000;
+    setExtraSeconds((extra) => extra + EXTEND_SECONDS);
+    setRemaining((left) => left + EXTEND_SECONDS);
+  }
+
+  const totalSeconds = durationSeconds + extraSeconds;
+  const progress = totalSeconds === 0 ? 0 : (totalSeconds - remaining) / totalSeconds;
   const dashOffset = useMemo(() => CIRCUMFERENCE * (1 - progress), [progress]);
 
   return (
@@ -281,7 +304,21 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
           >
             {running ? <Pause className="h-5 w-5" strokeWidth={2.25} /> : <Play className="ml-0.5 h-5 w-5" strokeWidth={2.25} />}
           </button>
-          <div className="h-10 w-10" aria-hidden="true" />
+          {/* Only while a session is running, in the slot that otherwise
+              just balances the reset button on the other side. */}
+          {running ? (
+            <button
+              type="button"
+              onClick={extend}
+              aria-label="Add five minutes"
+              title="Add five minutes"
+              className="flex h-10 w-10 items-center justify-center gap-px rounded-full border border-void-400 font-mono text-[11px] text-ink-500 transition-colors hover:text-ink-100"
+            >
+              <Plus className="h-3 w-3" strokeWidth={2} />5
+            </button>
+          ) : (
+            <div className="h-10 w-10" aria-hidden="true" />
+          )}
         </div>
 
         {habits.length > 0 && (
