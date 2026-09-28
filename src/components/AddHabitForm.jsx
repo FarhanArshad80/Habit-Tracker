@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { HABIT_COLORS, HABIT_ICONS, WHY_LIMIT, useHabits } from '../context/HabitContext';
 import { resolveIcon } from '../utils/iconMap';
@@ -43,6 +43,17 @@ export default function AddHabitForm({ onAdd }) {
     setDays(ALL_DAYS);
     setGoal(7);
     setError('');
+  }
+
+  // The "New ritual" button the form replaces. Closing the form puts focus
+  // back on it, because the field that held focus is gone with the form and
+  // a keyboard user would otherwise be sent back to the top of the page.
+  const openerRef = useRef(null);
+
+  function close() {
+    setOpen(false);
+    reset();
+    requestAnimationFrame(() => openerRef.current?.focus());
   }
 
   // Rituals already on the board are not suggested again: offering one would
@@ -94,6 +105,7 @@ export default function AddHabitForm({ onAdd }) {
   if (!open) {
     return (
       <button
+        ref={openerRef}
         type="button"
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-void-500 bg-void-200/40 px-4 py-3.5 font-display text-sm font-medium text-ink-300 transition-all hover:border-gold/60 hover:bg-void-200 hover:text-gold"
@@ -107,13 +119,20 @@ export default function AddHabitForm({ onAdd }) {
   return (
     <form
       onSubmit={handleSubmit}
+      // Escape abandons the half-filled form from any field in it, the same
+      // as the close button. Nothing typed so far is kept.
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        e.preventDefault();
+        close();
+      }}
       className="rounded-2xl border border-void-400 bg-void-200 p-5 shadow-card animate-rise"
     >
       <div className="flex items-center justify-between">
         <h3 className="font-display text-base font-semibold text-ink-100">New ritual</h3>
         <button
           type="button"
-          onClick={() => { setOpen(false); reset(); }}
+          onClick={close}
           aria-label="Close form"
           className="rounded-md p-1 text-ink-500 hover:text-ink-100"
         >
