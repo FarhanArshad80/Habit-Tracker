@@ -197,6 +197,27 @@ export default function App() {
                 <HabitOrder habits={habits} active={order} onChange={setOrder} />
               </div>
             </div>
+            {/* How much of the board a search is leaving out. The rows
+                that remain say what matched; nothing said how many did not,
+                and on a long board "is that all of them?" is the next
+                question. Spoken as it changes, for anyone not looking at
+                the list while they type. Nothing when nothing matched —
+                the empty list already says so. */}
+            {/* Kept in the page while idle, visually hidden, so screen
+                readers are already listening when the first letter lands. */}
+            <p
+              role="status"
+              aria-live="polite"
+              className={
+                searching && visible.length > 0
+                  ? '-mt-2 font-mono text-[11px] text-ink-700'
+                  : 'sr-only'
+              }
+            >
+              {searching && visible.length > 0
+                ? `Showing ${visible.length} of ${habits.length} rituals for “${query.trim()}”`
+                : ''}
+            </p>
             <HabitList 
               habits={visible} 
               onToggle={toggleCompletion} 
