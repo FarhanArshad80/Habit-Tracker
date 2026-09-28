@@ -100,6 +100,19 @@ export default function App() {
     [habits, view, order, searching, query]
   );
 
+  // A finished session marks its ritual done — it never marks it undone.
+  // Completion is a toggle, so a session linked to a ritual already checked
+  // off by hand earlier in the day was quietly un-checking it at the exact
+  // moment the work was finished. A ritual deleted mid-session is simply
+  // not there to mark.
+  function finishFocus(habitId) {
+    const habit = habits.find((h) => h.id === habitId);
+
+    if (!habit || habit.completedToday) return;
+
+    toggleCompletion(habitId, today);
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col lg:flex-row overflow-x-hidden">
       
@@ -217,7 +230,7 @@ export default function App() {
             </h2>
             <FocusTimer 
               habits={habits} 
-              onFinish={(habitId) => toggleCompletion(habitId, today)} 
+              onFinish={finishFocus}
               onCountdown={setFocusMinutes}
             />
           </aside>
