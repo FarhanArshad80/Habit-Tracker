@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, Timer as TimerIcon } from 'lucide-react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const PRESETS = [
   { label: '5m', seconds: 5 * 60 },
@@ -48,8 +49,20 @@ function formatTime(totalSeconds) {
 }
 
 export default function FocusTimer({ habits, onFinish, onCountdown }) {
-  const [durationSeconds, setDurationSeconds] = useState(PRESETS[2].seconds);
-  const [remaining, setRemaining] = useState(PRESETS[2].seconds);
+  // The length last picked, kept between visits. Somebody who works in
+  // 45-minute blocks works in them every day, and the timer opening on 25
+  // each time was a choice to be made again before every session. Checked
+  // against the presets, so a value from another build cannot leave the
+  // timer on a length none of the chips can show.
+  const [storedLength, setStoredLength] = useLocalStorage(
+    'constellation.focus.length',
+    PRESETS[2].seconds
+  );
+  const initialLength = PRESETS.some((p) => p.seconds === storedLength)
+    ? storedLength
+    : PRESETS[2].seconds;
+  const [durationSeconds, setDurationSeconds] = useState(initialLength);
+  const [remaining, setRemaining] = useState(initialLength);
   const [running, setRunning] = useState(false);
   const [linkedHabitId, setLinkedHabitId] = useState('');
   const [justFinished, setJustFinished] = useState(false);
@@ -161,6 +174,7 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   }, [justFinished]);
 
   function selectPreset(seconds) {
+    setStoredLength(seconds);
     setDurationSeconds(seconds);
     setRemaining(seconds);
     setRunning(false);
