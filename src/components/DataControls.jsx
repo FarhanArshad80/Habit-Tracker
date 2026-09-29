@@ -4,6 +4,7 @@ import { HABIT_COLORS, HABIT_ICONS } from '../context/HabitContext';
 import { backupFilename, parseBackup, serializeHabits } from '../utils/backup';
 import { habitsToCsv, spreadsheetFilename } from '../utils/spreadsheet';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { daysBetween } from '../utils/dateHelpers';
 
 const COLOR_IDS = HABIT_COLORS.map((c) => c.id);
 
@@ -12,13 +13,6 @@ const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 // Past this, a backup is old enough that losing the browser's storage would
 // cost more than a few days' check-ins, and the line says so in colour.
 const BACKUP_STALE_DAYS = 14;
-
-function daysBetween(fromKey, toKey) {
-  const [fy, fm, fd] = fromKey.split('-').map(Number);
-  const [ty, tm, td] = toKey.split('-').map(Number);
-
-  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86400000);
-}
 
 function backupAge(lastKey, today) {
   if (!lastKey || !DATE_KEY.test(lastKey)) return null;

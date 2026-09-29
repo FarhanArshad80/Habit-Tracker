@@ -146,6 +146,28 @@ export function previousDueDay(dateKey, days, pauses = []) {
   return cursor;
 }
 
+// Whole days from one date key to another, counted on the calendar rather
+// than the clock so a daylight-saving night cannot make it 0.96 of a day.
+export function daysBetween(fromKey, toKey) {
+  const [fy, fm, fd] = fromKey.split('-').map(Number);
+  const [ty, tm, td] = toKey.split('-').map(Number);
+
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86400000);
+}
+
+// The most recent day a ritual was actually kept, on or before today and not
+// before it existed. Null for a ritual that has never been checked off.
+export function lastKeptDay(completions, today = todayKey(), createdAt) {
+  let latest = null;
+
+  for (const dateKey of completions || []) {
+    if (dateKey > today || (createdAt && dateKey < createdAt)) continue;
+    if (!latest || dateKey > latest) latest = dateKey;
+  }
+
+  return latest;
+}
+
 export function isToday(dateKey) {
   return dateKey === todayKey();
 }

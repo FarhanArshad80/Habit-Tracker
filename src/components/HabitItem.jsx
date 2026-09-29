@@ -4,6 +4,7 @@ import { resolveIcon } from '../utils/iconMap';
 import { HABIT_COLORS, HABIT_ICONS, WHY_LIMIT } from '../context/HabitContext';
 import {
   getLastNDays, formatFriendlyDate, isDue, isPausedOn, isSkippedOn,
+  daysBetween, lastKeptDay,
 } from '../utils/dateHelpers';
 import { useHabits } from '../context/HabitContext';
 import DayPicker from './DayPicker';
@@ -36,6 +37,25 @@ function recordNote(current, best) {
   if (gap > RECORD_IN_REACH) return null;
 
   return `${gap} day${gap === 1 ? '' : 's'} from your best run of ${best}`;
+}
+
+// The sentence a streak of zero cannot say. A lapsed ritual shows no flame,
+// which reads the same whether it slipped yesterday or was quietly dropped
+// in the spring — and those call for different things. Null while there is
+// a run going, once today is done, while set aside, and for a ritual never
+// kept at all, where "last kept" has nothing to point at.
+function lapseNote(habit, today) {
+  if (habit.currentStreak > 0 || habit.completedToday || habit.paused) return null;
+
+  const last = lastKeptDay(habit.completions, today, habit.createdAt);
+
+  if (!last) return null;
+
+  const days = daysBetween(last, today);
+
+  if (days <= 0) return null;
+
+  return `Last kept ${days === 1 ? 'yesterday' : `${days} days ago`}`;
 }
 
 function colorHex(colorId) {
@@ -505,6 +525,15 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
           {recordNote(habit.currentStreak, habit.bestStreak) && (
             <p className="mt-2 font-mono text-[11px]" style={{ color: hex }}>
               {recordNote(habit.currentStreak, habit.bestStreak)}
+            </p>
+          )}
+
+          {lapseNote(habit, today) && (
+            <p
+              className="mt-2 font-mono text-[11px] text-ink-700"
+              title={formatFriendlyDate(lastKeptDay(habit.completions, today, habit.createdAt))}
+            >
+              {lapseNote(habit, today)}
             </p>
           )}
 
