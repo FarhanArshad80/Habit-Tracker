@@ -52,6 +52,17 @@ function formatTime(totalSeconds) {
   return `${m}:${s}`;
 }
 
+// The rituals a session can still mark off. One already checked today would
+// be left exactly as it is when the session ends, and a paused one is not
+// owed at all, so offering either is offering a choice that does nothing.
+// The one already picked always stays, so finishing it by hand mid-session
+// does not yank it out of the box it was chosen in.
+function linkableHabits(habits, selectedId) {
+  return habits.filter(
+    (h) => h.id === selectedId || (!h.completedToday && !h.paused)
+  );
+}
+
 export default function FocusTimer({ habits, onFinish, onCountdown }) {
   // The length last picked, kept between visits. Somebody who works in
   // 45-minute blocks works in them every day, and the timer opening on 25
@@ -245,6 +256,8 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
         })
       : null;
 
+  const linkable = linkableHabits(habits, linkedHabitId);
+
   const totalSeconds = durationSeconds + extraSeconds;
   const progress = totalSeconds === 0 ? 0 : (totalSeconds - remaining) / totalSeconds;
   const dashOffset = useMemo(() => CIRCUMFERENCE * (1 - progress), [progress]);
@@ -337,7 +350,7 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
           )}
         </div>
 
-        {habits.length > 0 && (
+        {linkable.length > 0 && (
           <div className="mt-5 w-full">
             <label htmlFor="linked-habit" className="mb-1.5 block text-center text-[11px] font-medium uppercase tracking-wide text-ink-500">
               Mark complete on finish
@@ -349,7 +362,7 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
               className="w-full rounded-lg border border-void-400 bg-void-100 px-3 py-2 text-center text-sm text-ink-300 outline-none focus:border-gold/60"
             >
               <option value="">No ritual selected</option>
-              {habits.map((h) => (
+              {linkable.map((h) => (
                 <option key={h.id} value={h.id}>{h.name}</option>
               ))}
             </select>
