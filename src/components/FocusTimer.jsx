@@ -232,6 +232,19 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
     setRemaining((left) => left + EXTEND_SECONDS);
   }
 
+  // The clock time the session lands on. A countdown answers "how long",
+  // but the question asked before starting is usually "will this be done
+  // before the call at three" — and that is sums done in the head while the
+  // minutes are already running. Read from the deadline, so an added five
+  // minutes moves it too.
+  const endsAt =
+    running && endAtRef.current
+      ? new Date(endAtRef.current).toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : null;
+
   const totalSeconds = durationSeconds + extraSeconds;
   const progress = totalSeconds === 0 ? 0 : (totalSeconds - remaining) / totalSeconds;
   const dashOffset = useMemo(() => CIRCUMFERENCE * (1 - progress), [progress]);
@@ -266,6 +279,9 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
             </span>
             {justFinished && (
               <span className="mt-0.5 text-[11px] font-medium text-teal animate-rise">Session complete</span>
+            )}
+            {endsAt && (
+              <span className="mt-0.5 font-mono text-[11px] text-ink-500">Ends {endsAt}</span>
             )}
           </div>
         </div>
