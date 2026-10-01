@@ -268,6 +268,7 @@ export default function App() {
             </h2>
             <FocusTimer 
               habits={habits} 
+              today={today}
               onFinish={finishFocus}
               onCountdown={setFocusMinutes}
             />

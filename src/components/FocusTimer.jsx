@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pause, Play, Plus, RotateCcw, Timer as TimerIcon } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { EMPTY_FOCUS_LOG, addFocus, focusFor } from '../utils/focusLog';
 
 const PRESETS = [
   { label: '5m', seconds: 5 * 60 },
@@ -63,7 +64,7 @@ function linkableHabits(habits, selectedId) {
   );
 }
 
-export default function FocusTimer({ habits, onFinish, onCountdown }) {
+export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
   // The length last picked, kept between visits. Somebody who works in
   // 45-minute blocks works in them every day, and the timer opening on 25
   // each time was a choice to be made again before every session. Checked
@@ -84,6 +85,16 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
   const [extraSeconds, setExtraSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [linkedHabitId, setLinkedHabitId] = useState('');
+  // What today's finished sessions add up to. Each session vanishes the
+  // moment it ends, so a day of four good blocks left nothing behind to
+  // say it had been one. Only sessions that ran to the end count — a reset
+  // is a session that did not happen.
+  const [storedLog, setStoredLog] = useLocalStorage('constellation.focus.today', EMPTY_FOCUS_LOG);
+  const todayLog = focusFor(storedLog, today);
+  // The length the session actually ran, extensions included, read by the
+  // tick when it ends.
+  const totalRef = useRef(initialLength);
+  const todayRef = useRef(today);
   const [justFinished, setJustFinished] = useState(false);
   // When this session is due to end, in wall-clock time.
   //
@@ -107,6 +118,8 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
 
   linkedRef.current = linkedHabitId;
   finishRef.current = onFinish;
+  totalRef.current = durationSeconds + extraSeconds;
+  todayRef.current = today;
 
   useEffect(() => {
     if (!running) return undefined;
@@ -124,6 +137,8 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
 
       playChime(audioRef.current);
 
+      setStoredLog((log) => addFocus(log, todayRef.current, totalRef.current));
+
       if (linkedRef.current) finishRef.current(linkedRef.current);
     };
 
@@ -140,7 +155,7 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
       clearInterval(id);
       document.removeEventListener('visibilitychange', tick);
     };
-  }, [running]);
+  }, [running, setStoredLog]);
 
   // A running session lives only in this tab. Closing it, or reloading it,
   // ends the session silently and the linked ritual is never marked — so
@@ -349,6 +364,14 @@ export default function FocusTimer({ habits, onFinish, onCountdown }) {
             <div className="h-10 w-10" aria-hidden="true" />
           )}
         </div>
+
+        {todayLog.sessions > 0 && (
+          <p className="mt-3 font-mono text-[11px] text-ink-500">
+            {Math.round(todayLog.seconds / 60)} min focused today
+            {' · '}
+            {todayLog.sessions} session{todayLog.sessions === 1 ? '' : 's'}
+          </p>
+        )}
 
         {linkable.length > 0 && (
           <div className="mt-5 w-full">
