@@ -39,7 +39,7 @@ function isTyping(target) {
   return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
 }
 
-export default function HabitSearch({ habits, value, onChange }) {
+export default function HabitSearch({ habits, value, onChange, onSubmit }) {
   const inputRef = useRef(null);
   const shown = canSearch(habits);
 
@@ -80,7 +80,16 @@ export default function HabitSearch({ habits, value, onChange }) {
         // And Escape is the way back out: it clears what was typed and
         // gives the keys back to the page, so the list is whole again
         // without reaching for the mouse.
+        //
+        // Enter hands the query to the board, which checks off the ritual
+        // it found when it found exactly one. The box keeps focus, so a
+        // morning of check-ins can be typed rather than scrolled for.
         onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            onSubmit?.();
+            return;
+          }
           if (event.key !== 'Escape') return;
           onChange('');
           event.currentTarget.blur();

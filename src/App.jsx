@@ -113,6 +113,21 @@ export default function App() {
     toggleCompletion(habitId, today);
   }
 
+  // Enter in the search box. With one ritual left on screen there is no
+  // doubt which was meant, so it is checked off and the box emptied for the
+  // next name. Like a finished focus session it only ever marks done — an
+  // Enter pressed twice must not undo the first — and a paused ritual is
+  // not owed, so it is left alone.
+  const lone = searching && visible.length === 1 ? visible[0] : null;
+  const canCheckLone = Boolean(lone && !lone.completedToday && !lone.paused);
+
+  function submitSearch() {
+    if (!canCheckLone) return;
+
+    toggleCompletion(lone.id, today);
+    setQuery('');
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col lg:flex-row overflow-x-hidden">
       
@@ -193,7 +208,7 @@ export default function App() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <HabitFilters habits={habits} active={filter} onChange={setFilter} />
               <div className="flex flex-wrap items-center gap-3">
-                <HabitSearch habits={habits} value={query} onChange={setQuery} />
+                <HabitSearch habits={habits} value={query} onChange={setQuery} onSubmit={submitSearch} />
                 <HabitOrder habits={habits} active={order} onChange={setOrder} />
               </div>
             </div>
@@ -215,7 +230,9 @@ export default function App() {
               }
             >
               {searching && visible.length > 0
-                ? `Showing ${visible.length} of ${habits.length} rituals for “${query.trim()}”`
+                ? `Showing ${visible.length} of ${habits.length} rituals for “${query.trim()}”${
+                    canCheckLone ? ' · Enter checks it off' : ''
+                  }`
                 : ''}
             </p>
             <HabitList 
