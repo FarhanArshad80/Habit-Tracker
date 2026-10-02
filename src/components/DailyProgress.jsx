@@ -16,10 +16,14 @@ export default function DailyProgress({ stats }) {
         <span className="font-display text-xs font-bold uppercase tracking-wider text-ink-500">
           Today&apos;s progress
         </span>
+        {/* Bonus check-ins — on a rest day or a paused ritual — are named
+            on a working day too. They sit outside the target, but leaving
+            them out made the extra effort vanish the moment anything else
+            was due. */}
         <span className="font-mono text-xs text-ink-300">
           {dueToday === 0
             ? `rest day${bonusToday > 0 ? ` · ${bonusToday} bonus` : ''}`
-            : `${completedToday} of ${dueToday} due`}
+            : `${completedToday} of ${dueToday} due${bonusToday > 0 ? ` · ${bonusToday} bonus` : ''}`}
         </span>
       </div>
 
