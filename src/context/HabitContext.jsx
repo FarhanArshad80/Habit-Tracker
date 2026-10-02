@@ -355,6 +355,13 @@ export function HabitProvider({ children }) {
     // part of the day's target.
     const bonusToday = habitsWithStats.filter((h) => !h.dueToday && h.completedToday).length;
     const bestStreak = habitsWithStats.reduce((max, h) => Math.max(max, h.bestStreak), 0);
+    // Which ritual the record belongs to. A number on its own says the board
+    // once ran for 40 days; it does not say which ritual did it, and that is
+    // the part worth remembering on a slow week. Ties are counted rather than
+    // settled, because picking one of two equal records would be arbitrary.
+    const recordHolders = bestStreak > 0
+      ? habitsWithStats.filter((h) => h.bestStreak === bestStreak)
+      : [];
     const atRisk = habitsWithStats.filter((h) => h.streakAtRisk);
     // The longest of the runs on the line, because "you could lose 40 days"
     // is a different sentence from "you could lose two".
@@ -369,6 +376,8 @@ export function HabitProvider({ children }) {
     return {
       total, activeTotal: active.length, paused,
       dueToday, completedToday, bonusToday, bestStreak,
+      bestStreakHolder: recordHolders.length === 1 ? recordHolders[0].name : null,
+      bestStreakHolders: recordHolders.length,
       totalCompletions, completionRate, goalsMet,
       atRisk: atRisk.length, longestAtRisk,
       // The day as a whole: the run of days where everything owed was done,

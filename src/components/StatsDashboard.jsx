@@ -1,6 +1,6 @@
 import { Flame, Target, Trophy, CalendarCheck } from 'lucide-react';
 
-function StatCard({ icon: Icon, label, value, suffix, accent }) {
+function StatCard({ icon: Icon, label, value, suffix, accent, note }) {
   return (
     <div className="rounded-2xl border border-void-400/60 bg-void-200/70 p-4 shadow-card">
       <div className="flex items-center gap-2 text-ink-500">
@@ -11,6 +11,11 @@ function StatCard({ icon: Icon, label, value, suffix, accent }) {
         {value}
         {suffix && <span className="ml-1 text-sm font-normal text-ink-500">{suffix}</span>}
       </p>
+      {note && (
+        <p className="mt-1 truncate font-mono text-[11px] text-ink-700" title={note}>
+          {note}
+        </p>
+      )}
     </div>
   );
 }
@@ -18,8 +23,16 @@ function StatCard({ icon: Icon, label, value, suffix, accent }) {
 export default function StatsDashboard({ stats }) {
   const {
     total, activeTotal, dueToday, completedToday, bestStreak, totalCompletions,
-    completionRate, goalsMet,
+    completionRate, goalsMet, bestStreakHolder, bestStreakHolders,
   } = stats;
+
+  // Whose record it is. One name when one ritual holds it, a count when
+  // several are level, and nothing before there is a record at all.
+  const recordNote = bestStreakHolder
+    ? bestStreakHolder
+    : bestStreakHolders > 1
+      ? `shared by ${bestStreakHolders} rituals`
+      : null;
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -38,6 +51,7 @@ export default function StatsDashboard({ stats }) {
         value={bestStreak}
         suffix={bestStreak === 1 ? 'day' : 'days'}
         accent="#F2B705"
+        note={recordNote}
       />
       {/* Weekly goals rather than a plain ritual count — the count is already
           the denominator of the Today card. */}
