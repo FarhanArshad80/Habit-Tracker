@@ -63,6 +63,11 @@ export default function AddHabitForm({ onAdd }) {
     .filter((starter) => !tracked.has(starter.name.toLowerCase()))
     .slice(0, STARTERS_SHOWN);
 
+  // Said while the name is being typed, not only once the whole form has
+  // been filled in and submitted — by then the icon, the days and the goal
+  // have all been picked for a ritual that cannot be added.
+  const clash = Boolean(name.trim()) && tracked.has(name.trim().toLowerCase());
+
   function applyStarter(starter) {
     setName(starter.name);
     setIcon(starter.icon);
@@ -90,9 +95,6 @@ export default function AddHabitForm({ onAdd }) {
       setError('Keep it under 40 characters.');
       return;
     }
-    const clash = habits.some(
-      (h) => h.name.trim().toLowerCase() === trimmed.toLowerCase()
-    );
     if (clash) {
       setError('You already track a ritual with that name.');
       return;
@@ -154,7 +156,11 @@ export default function AddHabitForm({ onAdd }) {
           autoFocus
           className="w-full rounded-lg border border-void-400 bg-void-100 px-3.5 py-2.5 text-sm text-ink-100 placeholder:text-ink-700 outline-none transition-colors focus:border-gold/60"
         />
-        {error && <p className="mt-1.5 text-xs text-rose">{error}</p>}
+        {(error || clash) && (
+          <p className="mt-1.5 text-xs text-rose">
+            {error || 'You already track a ritual with that name.'}
+          </p>
+        )}
 
         {/* Only while the box is empty. Once somebody has started typing
             their own idea, suggestions underneath it are in the way. */}
