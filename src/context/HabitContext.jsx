@@ -372,13 +372,17 @@ export function HabitProvider({ children }) {
     const goalsMet = active.filter((h) => h.goalMet).length;
     const paused = total - active.length;
     const totalCompletions = habitsWithStats.reduce((sum, h) => sum + h.totalCompletions, 0);
+    // The same rolling week the goals are read on. An all-time total only
+    // ever climbs, so on its own it cannot say whether the habit is still
+    // being kept or was mostly kept months ago.
+    const recentCompletions = habitsWithStats.reduce((sum, h) => sum + h.weeklyCount, 0);
     const completionRate = dueToday === 0 ? 100 : Math.round((completedToday / dueToday) * 100);
     return {
       total, activeTotal: active.length, paused,
       dueToday, completedToday, bonusToday, bestStreak,
       bestStreakHolder: recordHolders.length === 1 ? recordHolders[0].name : null,
       bestStreakHolders: recordHolders.length,
-      totalCompletions, completionRate, goalsMet,
+      totalCompletions, recentCompletions, completionRate, goalsMet,
       atRisk: atRisk.length, longestAtRisk,
       // The day as a whole: the run of days where everything owed was done,
       // and how many of the last month's owed days were closed out.

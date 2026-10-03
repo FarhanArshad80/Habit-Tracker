@@ -22,7 +22,7 @@ function StatCard({ icon: Icon, label, value, suffix, accent, note }) {
 //
 export default function StatsDashboard({ stats }) {
   const {
-    total, activeTotal, dueToday, completedToday, bestStreak, totalCompletions,
+    total, activeTotal, dueToday, completedToday, bestStreak, totalCompletions, recentCompletions,
     completionRate, goalsMet, bestStreakHolder, bestStreakHolders,
   } = stats;
 
@@ -68,6 +68,7 @@ export default function StatsDashboard({ stats }) {
         value={totalCompletions}
         suffix={totalCompletions === 1 ? 'check-in' : 'check-ins'}
         accent="#FB7185"
+        note={totalCompletions > 0 ? `${recentCompletions} in the last 7 days` : null}
       />
     </div>
   );
