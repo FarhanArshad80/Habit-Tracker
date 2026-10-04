@@ -83,6 +83,15 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
   const draftHex = colorHex(draftColor);
   const trail = getLastNDays(TRAIL_LENGTH, today);
   const completedSet = new Set(habit.completions);
+  // The dots show the fortnight; this counts it. Only the days that were
+  // owed - due, not set aside, and after the ritual began - so a rest day
+  // never reads as a miss.
+  const owedInTrail = trail.filter(
+    (dateKey) =>
+      (!habit.createdAt || dateKey >= habit.createdAt) &&
+      isDue(dateKey, habit.days, habit.pauses)
+  );
+  const keptInTrail = owedInTrail.filter((dateKey) => completedSet.has(dateKey)).length;
 
   // The draft is seeded from whatever the ritual says right now, so an edit
   // opened after a change elsewhere does not start from a stale value.
@@ -637,6 +646,11 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
               );
             })}
           </div>
+          {owedInTrail.length > 0 && (
+            <p className="mt-2 font-mono text-[11px] text-ink-700">
+              Kept {keptInTrail} of {owedInTrail.length} due day{owedInTrail.length === 1 ? '' : 's'} in the last {TRAIL_LENGTH}
+            </p>
+          )}
         </div>
       </div>
     </li>
