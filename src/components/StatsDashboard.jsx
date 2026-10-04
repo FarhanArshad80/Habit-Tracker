@@ -34,6 +34,15 @@ export default function StatsDashboard({ stats }) {
       ? `shared by ${bestStreakHolders} rituals`
       : null;
 
+  // What is still owed today, which is the number the fraction leaves to be
+  // worked out. Silent on a rest day and before anything is tracked.
+  const leftToday = dueToday - completedToday;
+  const todayNote = total === 0 || dueToday === 0
+    ? null
+    : leftToday > 0
+      ? `${leftToday} still to do`
+      : 'All done for today';
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {/* Measured against what is due, not everything tracked — a day where
@@ -44,6 +53,7 @@ export default function StatsDashboard({ stats }) {
         value={total === 0 ? '—' : dueToday === 0 ? 'Rest' : `${completedToday}/${dueToday}`}
         suffix={total === 0 || dueToday === 0 ? '' : `· ${completionRate}%`}
         accent="#2DD4BF"
+        note={todayNote}
       />
       <StatCard
         icon={Flame}
