@@ -1,4 +1,4 @@
-import { LayoutList, Target, Flame, Pause } from 'lucide-react';
+import { LayoutList, Target, Flame, Pause, Circle } from 'lucide-react';
 
 // The four ways the board is worth reading. Each view carries the test that
 // decides what belongs in it, so the number on a chip and the list underneath
@@ -22,6 +22,16 @@ export const HABIT_FILTERS = [
     icon: Target,
     match: (habit) => habit.dueToday,
     empty: 'Nothing is owed today — the schedule says rest.',
+  },
+  // What is left to do today, streak or not. "At risk" only counts rituals
+  // with a run going, so a new or lapsed one that is due today never showed
+  // up in any view that meant "still to do".
+  {
+    id: 'todo',
+    label: 'Still to do',
+    icon: Circle,
+    match: (habit) => habit.dueToday && !habit.completedToday,
+    empty: 'Everything due today is checked off.',
   },
   {
     id: 'risk',
