@@ -31,7 +31,7 @@ export function habitMatchesQuery(habit, query) {
 
 // Whether a key press already belongs to something being typed into, and
 // so is not ours to take.
-function isTyping(target) {
+export function isTyping(target) {
   if (!target) return false;
 
   const tag = target.tagName;

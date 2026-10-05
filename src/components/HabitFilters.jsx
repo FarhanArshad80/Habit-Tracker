@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { LayoutList, Target, Flame, Pause, Circle } from 'lucide-react';
+import { isTyping } from './HabitSearch';
 
 // The four ways the board is worth reading. Each view carries the test that
 // decides what belongs in it, so the number on a chip and the list underneath
@@ -60,11 +62,34 @@ export function canFilter(habits) {
 }
 
 export default function HabitFilters({ habits, active, onChange }) {
-  if (!canFilter(habits)) return null;
+  const shown = canFilter(habits);
+
+  // The number keys pick a view by its place in the row - 1 for All, 2 for
+  // Due today and so on - so moving between them does not need the mouse.
+  // Never while typing, where a digit is a digit.
+  useEffect(() => {
+    if (!shown) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (isTyping(event.target)) return;
+
+      const view = HABIT_FILTERS[Number(event.key) - 1];
+      if (!view) return;
+
+      event.preventDefault();
+      onChange(view.id);
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [shown, onChange]);
+
+  if (!shown) return null;
 
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="Filter rituals">
-      {HABIT_FILTERS.map(({ id, label, icon: Icon, match }) => {
+      {HABIT_FILTERS.map(({ id, label, icon: Icon, match }, index) => {
         const count = habits.filter(match).length;
         const on = id === active;
 
@@ -74,6 +99,7 @@ export default function HabitFilters({ habits, active, onChange }) {
             type="button"
             onClick={() => onChange(id)}
             aria-pressed={on}
+            title={`Press ${index + 1}`}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs transition-colors ${
               on
                 ? 'border-gold/70 bg-gold/10 text-gold'
