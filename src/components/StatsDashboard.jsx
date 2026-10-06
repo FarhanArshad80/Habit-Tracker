@@ -43,6 +43,15 @@ export default function StatsDashboard({ stats }) {
       ? `${leftToday} still to do`
       : 'All done for today';
 
+  // The fraction says how many goals are met; what the rest of the week has
+  // to do is the other half of it. Silent before anything is tracked.
+  const goalsOpen = activeTotal - goalsMet;
+  const weekNote = activeTotal === 0
+    ? null
+    : goalsOpen > 0
+      ? `${goalsOpen} still open`
+      : 'Every goal met';
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {/* Measured against what is due, not everything tracked — a day where
@@ -71,6 +80,7 @@ export default function StatsDashboard({ stats }) {
         value={activeTotal === 0 ? '—' : `${goalsMet}/${activeTotal}`}
         suffix={activeTotal === 0 ? '' : 'goals met'}
         accent="#A78BFA"
+        note={weekNote}
       />
       <StatCard
         icon={Trophy}
