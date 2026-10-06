@@ -19,6 +19,18 @@ function StatCard({ icon: Icon, label, value, suffix, accent, note }) {
     </div>
   );
 }
+
+// The week's total as a pace as well: "12 in the last 7 days" leaves the
+// division to the reader, and a day's rate is what gets compared against
+// how many rituals are on the board. Rounded to a tenth, and left off when
+// the week is empty.
+function recentNote(recent) {
+  const perDay = Math.round((recent / 7) * 10) / 10;
+
+  return recent > 0
+    ? `${recent} in the last 7 days · ${perDay} a day`
+    : `${recent} in the last 7 days`;
+}
 //
 export default function StatsDashboard({ stats }) {
   const {
@@ -88,7 +100,7 @@ export default function StatsDashboard({ stats }) {
         value={totalCompletions}
         suffix={totalCompletions === 1 ? 'check-in' : 'check-ins'}
         accent="#FB7185"
-        note={totalCompletions > 0 ? `${recentCompletions} in the last 7 days` : null}
+        note={totalCompletions > 0 ? recentNote(recentCompletions) : null}
       />
     </div>
   );
