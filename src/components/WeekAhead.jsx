@@ -80,10 +80,19 @@ export default function WeekAhead({ habits }) {
         {days.map(({ dateKey, due }) => {
           const share = heaviest === 0 ? 0 : (due.length / heaviest) * 100;
           const isToday = dateKey === today;
+          const done = due.filter((habit) => habit.completions.includes(dateKey)).length;
 
           return (
             <li key={dateKey} className="flex flex-1 flex-col items-center gap-1.5">
-              <span className="font-mono text-[10px] text-ink-700">{due.length}</span>
+              {/* Today is the one column already under way, so it says how
+                  much of it is done rather than only how much there is. */}
+              <span
+                className={`font-mono text-[10px] ${
+                  isToday && due.length > 0 && done === due.length ? 'text-teal' : 'text-ink-700'
+                }`}
+              >
+                {isToday && due.length > 0 ? `${done}/${due.length}` : due.length}
+              </span>
 
               {/* A day with nothing owed keeps its column as a flat line
                   rather than closing up, because an empty Sunday is the
