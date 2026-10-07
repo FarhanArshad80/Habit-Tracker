@@ -60,6 +60,10 @@ export default function WeekAhead({ habits }) {
           </span>
           {' · '}
           {heaviest} due
+          {/* The heaviest day says where the week peaks; the sum says how
+              big the week is, which is what decides whether to add more. */}
+          {' · '}
+          {counts.reduce((sum, count) => sum + count, 0)} in all
         </span>
       </div>
 
