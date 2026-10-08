@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { LayoutList, Target, Flame, Pause, Circle } from 'lucide-react';
+import { LayoutList, Target, Flame, Pause, Circle, CheckCircle2 } from 'lucide-react';
 import { isTyping } from './HabitSearch';
 
 // The four ways the board is worth reading. Each view carries the test that
@@ -48,6 +48,18 @@ export const HABIT_FILTERS = [
     icon: Pause,
     match: (habit) => habit.paused,
     empty: 'Nothing is set aside right now.',
+  },
+  // Last in the row so the number keys the other views already answer to
+  // stay where they were.
+  //
+  // The other half of "Still to do": what today has already been given.
+  // Bonus check-ins on a rest day count too, since they were done today.
+  {
+    id: 'done',
+    label: 'Done today',
+    icon: CheckCircle2,
+    match: (habit) => habit.completedToday,
+    empty: 'Nothing checked off yet today.',
   },
 ];
 
