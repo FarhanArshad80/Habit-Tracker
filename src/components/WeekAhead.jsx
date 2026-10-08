@@ -37,6 +37,7 @@ export default function WeekAhead({ habits }) {
 
   const counts = days.map((day) => day.due.length);
   const heaviest = Math.max(...counts);
+  const lightest = days.find((day) => day.due.length === Math.min(...counts));
 
   if (habits.length < 2 || heaviest === 0 || new Set(counts).size === 1) return null;
 
@@ -60,6 +61,14 @@ export default function WeekAhead({ habits }) {
           </span>
           {' · '}
           {heaviest} due
+          {/* And the other end of the week: the day with room in it, for
+              moving something to or simply looking forward to. */}
+          {' · lightest is '}
+          <span className="text-ink-300">
+            {lightest.dateKey === today
+              ? 'today'
+              : formatFriendlyDate(lightest.dateKey).split(',')[0]}
+          </span>
           {/* The heaviest day says where the week peaks; the sum says how
               big the week is, which is what decides whether to add more. */}
           {' · '}
