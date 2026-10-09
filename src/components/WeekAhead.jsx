@@ -73,6 +73,10 @@ export default function WeekAhead({ habits }) {
               big the week is, which is what decides whether to add more. */}
           {' · '}
           {counts.reduce((sum, count) => sum + count, 0)} in all
+          {/* The days with nothing owed at all, which are the ones worth
+              knowing about before planning anything else into the week. */}
+          {counts.includes(0) &&
+            ` · ${counts.filter((count) => count === 0).length} free`}
         </span>
       </div>
 
