@@ -65,6 +65,10 @@ export default function HabitSearch({ habits, value, onChange, onSubmit }) {
 
   if (!shown) return null;
 
+  // On a long board the matches can run below the fold, so how many there
+  // are is said on the box itself rather than left to be counted.
+  const matching = habits.filter((habit) => habitMatchesQuery(habit, value)).length;
+
   return (
     <div className="relative">
       <Search
@@ -97,6 +101,7 @@ export default function HabitSearch({ habits, value, onChange, onSubmit }) {
         placeholder="Find a ritual  /"
         aria-label="Search rituals by name or reason"
         aria-keyshortcuts="/"
+        title={value.trim() ? `${matching} of ${habits.length} rituals match` : undefined}
         className="w-44 rounded-full border border-void-400 bg-transparent py-1.5 pl-8 pr-8 font-mono text-xs text-ink-100 placeholder:text-ink-700 transition-colors focus:border-gold/70 focus:outline-none sm:w-56"
       />
       {/* A search input draws its own clear button in some browsers and not
