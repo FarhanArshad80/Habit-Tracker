@@ -83,6 +83,13 @@ export default function DayNote() {
               type="button"
               onClick={() => setBack(choice.value)}
               aria-pressed={choice.on}
+              // Whether there is anything to come back to, before switching
+              // the box over to find out.
+              title={
+                noteFor(notes, choice.value ? addDays(today, -1) : today).trim()
+                  ? 'A note is already written for this day'
+                  : 'Nothing written for this day yet'
+              }
               className={`rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors ${
                 choice.on
                   ? 'border-gold/70 bg-gold/10 text-gold'
