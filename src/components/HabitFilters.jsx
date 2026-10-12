@@ -111,7 +111,9 @@ export default function HabitFilters({ habits, active, onChange }) {
             type="button"
             onClick={() => onChange(id)}
             aria-pressed={on}
-            title={`Press ${index + 1}`}
+            // The count on the chip read against the whole board, which is
+            // what turns "3 still to do" into how much of the day is left.
+            title={`Press ${index + 1}${id === 'all' ? '' : ` · ${count} of ${habits.length} rituals`}`}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs transition-colors ${
               on
                 ? 'border-gold/70 bg-gold/10 text-gold'
