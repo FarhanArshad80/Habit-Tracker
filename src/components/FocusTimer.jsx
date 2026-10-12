@@ -285,7 +285,12 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
       </div>
 
       <div className="mt-4 flex flex-col items-center">
-        <div className="relative h-36 w-36">
+        {/* The ring shows how far along the session is; hovering puts a
+            number on it, which a curve alone never quite does. */}
+        <div
+          className="relative h-36 w-36"
+          title={progress > 0 ? `${Math.round(progress * 100)}% of this session done` : undefined}
+        >
           <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
             <circle cx="60" cy="60" r={RADIUS} fill="none" stroke="#1B2333" strokeWidth="8" />
             <circle
