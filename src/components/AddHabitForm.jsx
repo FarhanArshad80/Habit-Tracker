@@ -278,6 +278,16 @@ export default function AddHabitForm({ onAdd }) {
               <option key={n} value={n}>{n}x / week</option>
             ))}
           </select>
+          {/* The goal and the schedule read together: how much room the week
+              leaves is the thing that decides whether the goal is kind or
+              strict, and it is a subtraction nobody should have to do. */}
+          <p className="mt-1.5 font-mono text-[11px] text-ink-700">
+            {Number(goal) >= days.length
+              ? 'Every scheduled day counts'
+              : `${days.length - Number(goal)} of ${days.length} scheduled ${
+                  days.length === 1 ? 'day' : 'days'
+                } can be missed`}
+          </p>
         </div>
       </div>
 
