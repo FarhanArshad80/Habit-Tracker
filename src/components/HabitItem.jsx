@@ -360,7 +360,13 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                     ? { color: hex, backgroundColor: `${hex}14` }
                     : { color: '#8B93A7', backgroundColor: 'rgba(139,147,167,0.10)' }
                 }
-                title={`${habit.weeklyCount} of ${habit.weeklyGoal} completed in the last 7 days`}
+                // Short of the goal, the useful number is what is still
+                // missing rather than what is already done.
+                title={`${habit.weeklyCount} of ${habit.weeklyGoal} completed in the last 7 days${
+                  habit.goalMet
+                    ? ''
+                    : ` · ${habit.weeklyGoal - habit.weeklyCount} more to reach the goal`
+                }`}
               >
                 {habit.goalMet && <Target className="h-3.5 w-3.5" strokeWidth={2} />}
                 {habit.weeklyCount}/{habit.weeklyGoal}
