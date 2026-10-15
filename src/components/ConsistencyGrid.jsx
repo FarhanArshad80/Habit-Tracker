@@ -93,6 +93,24 @@ export default function ConsistencyGrid({ habits }) {
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-display text-xs font-bold uppercase tracking-wider text-ink-500">
           Last 12 weeks
+          {/* The squares show each day; this is the twelve weeks summed
+              into the one figure that says how the stretch went. */}
+          {(() => {
+            let due = 0;
+            let done = 0;
+            // Today is left out: it is still being done, and counting its
+            // unchecked rituals would pull the figure down every morning.
+            for (const [dateKey, score] of scores) {
+              if (dateKey === today) continue;
+              due += score.due;
+              done += score.done;
+            }
+            return due > 0 ? (
+              <span className="ml-2 font-mono font-normal normal-case tracking-normal text-ink-700">
+                {Math.round((done / due) * 100)}% kept
+              </span>
+            ) : null;
+          })()}
         </span>
         <span className="flex items-center gap-2 font-mono text-xs text-ink-700">
           less · more
