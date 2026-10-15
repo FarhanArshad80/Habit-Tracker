@@ -55,7 +55,14 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
     setLastBackup(today);
 
     setError('');
-    setNote(`Saved ${habits.length} ritual${habits.length === 1 ? '' : 's'}.`);
+    // The check-ins are the history a backup exists to protect, so the
+    // confirmation counts those as well as the rituals they belong to.
+    const checkIns = habits.reduce((sum, habit) => sum + habit.completions.length, 0);
+    setNote(
+      `Saved ${habits.length} ritual${habits.length === 1 ? '' : 's'} and ${checkIns} check-in${
+        checkIns === 1 ? '' : 's'
+      }.`
+    );
   }
 
   // Not a backup, and said so: nothing in it can be restored, because a
