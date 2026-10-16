@@ -436,6 +436,11 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                   <button
                     type="button"
                     onClick={() => onDelete(habit.id)}
+                    // What the button is about to throw away, counted, so a
+                    // ritual with months behind it is not deleted lightly.
+                    title={`Deletes ${habit.completions.length} check-in${
+                      habit.completions.length === 1 ? '' : 's'
+                    } along with it`}
                     className="rounded-md bg-rose/90 px-2 py-1 text-xs font-medium text-void-100 hover:bg-rose"
                   >
                     Delete
