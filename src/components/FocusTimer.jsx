@@ -371,7 +371,12 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
         </div>
 
         {todayLog.sessions > 0 && (
-          <p className="mt-3 font-mono text-[11px] text-ink-500">
+          // The total hides whether it was one long sit or several short
+          // ones; the average per session is what says which.
+          <p
+            className="mt-3 font-mono text-[11px] text-ink-500"
+            title={`About ${Math.round(todayLog.seconds / 60 / todayLog.sessions)} min a session`}
+          >
             {Math.round(todayLog.seconds / 60)} min focused today
             {' · '}
             {todayLog.sessions} session{todayLog.sessions === 1 ? '' : 's'}
