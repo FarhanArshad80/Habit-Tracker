@@ -202,6 +202,13 @@ export default function AddHabitForm({ onAdd }) {
           maxLength={WHY_LIMIT}
           className="w-full rounded-lg border border-void-400 bg-void-100 px-3.5 py-2.5 text-sm text-ink-100 placeholder:text-ink-700 outline-none transition-colors focus:border-gold/60"
         />
+        {/* The box stops taking letters at the limit without a word; near
+            the end it says how much room is left instead. */}
+        {why.length >= WHY_LIMIT - 20 && (
+          <p className="mt-1 text-right font-mono text-[11px] text-ink-700" aria-live="polite">
+            {WHY_LIMIT - why.length} left
+          </p>
+        )}
       </div>
 
       <div className="mt-4">
