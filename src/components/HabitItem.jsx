@@ -680,7 +680,10 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
             })}
           </div>
           {owedInTrail.length > 0 && (
-            <p className="mt-2 font-mono text-[11px] text-ink-700">
+            <p
+              className="mt-2 font-mono text-[11px] text-ink-700"
+              title={`${Math.round((keptInTrail / owedInTrail.length) * 100)}% of due days kept`}
+            >
               Kept {keptInTrail} of {owedInTrail.length} due day{owedInTrail.length === 1 ? '' : 's'} in the last {TRAIL_LENGTH}
             </p>
           )}
