@@ -338,7 +338,21 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
               </form>
             ) : (
               <div className="flex min-w-0 items-center gap-2">
-                <h3 className="truncate font-display text-base font-semibold text-ink-100">
+                {/* How long a ritual has been going frames every number
+                    beside it — a 5-day streak means more in week one. */}
+                <h3
+                  className="truncate font-display text-base font-semibold text-ink-100"
+                  title={
+                    habit.createdAt
+                      ? (() => {
+                          const age = daysBetween(habit.createdAt, today);
+                          return `Started ${formatFriendlyDate(habit.createdAt)}${
+                            age > 0 ? ` · ${age} day${age === 1 ? '' : 's'} ago` : ''
+                          }`;
+                        })()
+                      : undefined
+                  }
+                >
                   {habit.name}
                 </h3>
                 {/* Said in words, not just implied by the dimming — a faded
