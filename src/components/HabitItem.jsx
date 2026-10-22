@@ -576,7 +576,15 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
               the one that survives a missed Tuesday. Held back until there
               are enough owed days behind it to mean something. */}
           {habit.consistency && (
-            <p className="mt-2 font-mono text-[11px] text-ink-700">
+            <p
+              className="mt-2 font-mono text-[11px] text-ink-700"
+              title={(() => {
+                const missed = habit.consistency.owed - habit.consistency.kept;
+                return missed === 0
+                  ? 'Not one owed day missed'
+                  : `${missed} owed day${missed === 1 ? '' : 's'} missed`;
+              })()}
+            >
               <span style={{ color: hex }}>{habit.consistency.rate}%</span>
               {' kept · '}
               {habit.consistency.kept} of {habit.consistency.owed} days owed in
