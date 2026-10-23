@@ -142,7 +142,19 @@ export default function ConsistencyGrid({ habits }) {
 
         {weeks.map((week, index) => (
           <div key={week[0]} className="flex shrink-0 flex-col gap-1">
-            <span className="h-[14px] font-mono text-[9px] leading-[14px] text-ink-700">
+            {/* The label is three letters; across a new year it is worth
+                knowing which year's January. */}
+            <span
+              className="h-[14px] font-mono text-[9px] leading-[14px] text-ink-700"
+              title={
+                monthLabels[index]
+                  ? (() => {
+                      const [y, m] = week[0].split('-').map(Number);
+                      return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+                    })()
+                  : undefined
+              }
+            >
               {monthLabels[index]}
             </span>
 
