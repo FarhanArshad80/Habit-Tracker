@@ -52,7 +52,13 @@ export default function WeekAhead({ habits }) {
             found by comparing seven bars. */}
         <span className="font-mono text-xs text-ink-500">
           heaviest is{' '}
-          <span className="text-ink-300">
+          <span
+            className="text-ink-300"
+            title={days
+              .find((day) => day.due.length === heaviest)
+              .due.map((habit) => habit.name)
+              .join('\n')}
+          >
             {days.find((day) => day.due.length === heaviest).dateKey === today
               ? 'today'
               : formatFriendlyDate(
