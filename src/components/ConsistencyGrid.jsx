@@ -168,7 +168,9 @@ export default function ConsistencyGrid({ habits }) {
                 : `${formatFriendlyDate(dateKey)} — ${
                     score.due === 0
                       ? 'nothing due'
-                      : `${score.done} of ${score.due} done`
+                      : score.done > 0 && score.done < score.due
+                        ? `${score.done} of ${score.due} done · ${Math.round((score.done / score.due) * 100)}%`
+                        : `${score.done} of ${score.due} done`
                   }`;
               // Only a day with something to read becomes a button. Making
               // all eighty-four squares focusable would put eighty-four tab
