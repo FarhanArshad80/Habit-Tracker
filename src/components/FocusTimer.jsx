@@ -314,7 +314,12 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
               <span className="mt-0.5 text-[11px] font-medium text-teal animate-rise">Session complete</span>
             )}
             {endsAt && (
-              <span className="mt-0.5 font-mono text-[11px] text-ink-500">Ends {endsAt}</span>
+              <span
+                className="mt-0.5 font-mono text-[11px] text-ink-500"
+                title={minutesLeft !== null ? `${minutesLeft} min from now` : undefined}
+              >
+                Ends {endsAt}
+              </span>
             )}
           </div>
         </div>
