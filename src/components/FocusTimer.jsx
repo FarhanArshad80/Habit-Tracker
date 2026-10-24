@@ -382,7 +382,15 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
             className="mt-3 font-mono text-[11px] text-ink-500"
             title={`About ${Math.round(todayLog.seconds / 60 / todayLog.sessions)} min a session`}
           >
-            {Math.round(todayLog.seconds / 60)} min focused today
+            <span
+              title={
+                todayLog.seconds >= 3600
+                  ? `${Math.floor(todayLog.seconds / 3600)}h ${Math.round((todayLog.seconds % 3600) / 60)}m`
+                  : undefined
+              }
+            >
+              {Math.round(todayLog.seconds / 60)} min focused today
+            </span>
             {' · '}
             {todayLog.sessions} session{todayLog.sessions === 1 ? '' : 's'}
           </p>
