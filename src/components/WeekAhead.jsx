@@ -113,6 +113,15 @@ export default function WeekAhead({ habits }) {
                 className={`font-mono text-[10px] ${
                   isToday && due.length > 0 && done === due.length ? 'text-teal' : 'text-ink-700'
                 }`}
+                // "2/4" says how many are left, not which.
+                title={
+                  isToday && done < due.length
+                    ? `Still to do: ${due
+                        .filter((habit) => !habit.completions.includes(dateKey))
+                        .map((habit) => habit.name)
+                        .join(', ')}`
+                    : undefined
+                }
               >
                 {isToday && due.length > 0 ? `${done}/${due.length}` : due.length}
               </span>
