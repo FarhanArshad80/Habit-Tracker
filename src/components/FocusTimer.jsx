@@ -384,8 +384,8 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
           >
             <span
               title={
-                todayLog.seconds >= 3600
-                  ? `${Math.floor(todayLog.seconds / 3600)}h ${Math.round((todayLog.seconds % 3600) / 60)}m`
+                Math.round(todayLog.seconds / 60) >= 60
+                  ? `${Math.floor(Math.round(todayLog.seconds / 60) / 60)}h ${Math.round(todayLog.seconds / 60) % 60}m`
                   : undefined
               }
             >
