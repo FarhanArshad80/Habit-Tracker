@@ -66,7 +66,10 @@ export default function DailyProgress({ stats }) {
           two days old "0 of 1 day closed out" is a verdict, not a
           measurement. */}
       {owedDays > 0 && (
-        <p className="mt-2 font-mono text-[11px] text-ink-700">
+        <p
+          className="mt-2 font-mono text-[11px] text-ink-700"
+          title={`${Math.round((perfectDays / owedDays) * 100)}% of owed days finished`}
+        >
           {closedOutStreak > 0 ? (
             <>
               <span className="text-teal">
