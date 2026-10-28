@@ -34,6 +34,9 @@ export default function DailyProgress({ stats }) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label="Habits completed today"
+        title={dueToday === 0
+          ? 'Nothing due today'
+          : `${completionRate}% of today's ${dueToday} due ritual${dueToday === 1 ? '' : 's'} done`}
       >
         <div
           className={`h-full rounded-full transition-all duration-500 ease-out ${
