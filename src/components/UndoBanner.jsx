@@ -93,6 +93,7 @@ export default function UndoBanner({ pending, onRestore, onDismiss }) {
           type="button"
           onClick={onDismiss}
           aria-label="Dismiss"
+          title="Dismiss"
           className="shrink-0 rounded-md p-1 text-ink-700 transition-colors hover:text-ink-300"
         >
           <X className="h-4 w-4" strokeWidth={1.75} />
