@@ -134,6 +134,7 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
+          title="Load a backup file · asks before replacing what is here"
           className="flex items-center gap-1.5 rounded-lg border border-void-400 px-3 py-1.5 text-xs font-medium text-ink-300 transition-colors hover:border-void-500 hover:text-ink-100"
         >
           <Upload className="h-3.5 w-3.5" strokeWidth={1.75} />
