@@ -67,6 +67,7 @@ export default function DayPicker({ days, onChange, idPrefix = 'days' }) {
               type="button"
               onClick={() => onChange([...preset.days])}
               aria-pressed={on}
+              title={[...preset.days].sort((a, b) => a - b).map((day) => FULL[day]).join(', ')}
               className={`rounded-md border px-2 py-1 text-[11px] transition-colors ${
                 on
                   ? 'border-gold/50 text-gold'
