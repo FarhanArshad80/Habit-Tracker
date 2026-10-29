@@ -113,6 +113,7 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
           type="button"
           onClick={handleExport}
           disabled={habits.length === 0}
+          title="Everything, notes included, in a file Restore can read back"
           className="flex items-center gap-1.5 rounded-lg border border-void-400 px-3 py-1.5 text-xs font-medium text-ink-300 transition-colors hover:border-void-500 hover:text-ink-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Download className="h-3.5 w-3.5" strokeWidth={1.75} />
@@ -123,6 +124,7 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
           type="button"
           onClick={handleSpreadsheet}
           disabled={habits.length === 0}
+          title="For reading in Excel or Sheets · not a backup Restore can use"
           className="flex items-center gap-1.5 rounded-lg border border-void-400 px-3 py-1.5 text-xs font-medium text-ink-300 transition-colors hover:border-void-500 hover:text-ink-100 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <FileSpreadsheet className="h-3.5 w-3.5" strokeWidth={1.75} />
