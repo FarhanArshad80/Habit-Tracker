@@ -346,6 +346,7 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
             type="button"
             onClick={reset}
             aria-label="Reset timer"
+            title="Reset timer"
             className="flex h-10 w-10 items-center justify-center rounded-full border border-void-400 text-ink-500 transition-colors hover:text-ink-100"
           >
             <RotateCcw className="h-4 w-4" strokeWidth={1.75} />
