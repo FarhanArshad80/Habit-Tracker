@@ -136,6 +136,7 @@ export default function AddHabitForm({ onAdd }) {
           type="button"
           onClick={close}
           aria-label="Close form"
+          title="Close (Esc)"
           className="rounded-md p-1 text-ink-500 hover:text-ink-100"
         >
           <X className="h-4 w-4" />
