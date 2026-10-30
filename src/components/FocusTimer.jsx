@@ -355,6 +355,7 @@ export default function FocusTimer({ habits, today, onFinish, onCountdown }) {
             type="button"
             onClick={toggleRunning}
             aria-label={running ? 'Pause timer' : 'Start timer'}
+            title={running ? 'Pause timer' : 'Start timer'}
             className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-void-100 shadow-glow transition-transform active:scale-95"
           >
             {running ? <Pause className="h-5 w-5" strokeWidth={2.25} /> : <Play className="ml-0.5 h-5 w-5" strokeWidth={2.25} />}
