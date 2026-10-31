@@ -243,6 +243,7 @@ export default function ConsistencyGrid({ habits }) {
             type="button"
             onClick={() => setReading(null)}
             aria-label="Close the note"
+            title="Close the note"
             className="shrink-0 text-ink-500 transition-colors hover:text-ink-100"
           >
             <X className="h-3.5 w-3.5" strokeWidth={2} />
