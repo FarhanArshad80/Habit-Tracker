@@ -246,6 +246,7 @@ export default function HabitItem({ habit, index, total, onToggle, onDelete, onM
                 <button
                   type="button"
                   onClick={cancelEdit}
+                  title="Discard these changes (Esc)"
                   className="rounded-md px-2 py-1.5 text-xs font-medium text-ink-500 hover:text-ink-300"
                 >
                   Cancel
