@@ -164,6 +164,7 @@ export default function DataControls({ habits, notes = {}, today, onReplace }) {
           <button
             type="button"
             onClick={confirmImport}
+            title="Cannot be undone · export a backup first to keep what is here"
             className="rounded-md bg-gold px-2.5 py-1 font-semibold text-void-100 hover:bg-gold-soft"
           >
             Replace
