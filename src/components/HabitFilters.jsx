@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { LayoutList, Target, Flame, Pause, Circle, CheckCircle2 } from 'lucide-react';
-import { isTyping } from './HabitSearch';
+import { isTyping } from '../utils/habitSearch';
 
 // The four ways the board is worth reading. Each view carries the test that
 // decides what belongs in it, so the number on a chip and the list underneath
