@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
 import { Flame, Trash2, Check, Target, ChevronUp, ChevronDown, Pencil, Pause, Play, CalendarOff } from 'lucide-react';
 import { resolveIcon } from '../utils/iconMap';
-import { HABIT_COLORS, HABIT_ICONS, WHY_LIMIT } from '../context/HabitContext';
+import { HABIT_ICONS, WHY_LIMIT } from '../context/HabitContext';
+import { HABIT_COLORS } from '../utils/habitOptions';
 import {
   getLastNDays, formatFriendlyDate, isDue, isPausedOn, isSkippedOn,
   daysBetween, lastKeptDay,
