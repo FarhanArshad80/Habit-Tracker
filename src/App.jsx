@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useHabits } from './context/HabitContext';
+import { useHabits } from './hooks/useHabits';
 import StatsDashboard from './components/StatsDashboard';
 import DailyProgress from './components/DailyProgress';
 import DayNote from './components/DayNote';

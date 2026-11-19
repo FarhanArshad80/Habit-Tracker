@@ -4,7 +4,7 @@ import {
   addDays, weekdayOf, isScheduled, isPausedOn, formatFriendlyDate,
 } from '../utils/dateHelpers';
 import { noteFor } from '../utils/dayNotes';
-import { useHabits } from '../context/HabitContext';
+import { useHabits } from '../hooks/useHabits';
 
 const WEEKS = 12;
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

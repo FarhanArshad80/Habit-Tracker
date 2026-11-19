@@ -65,9 +65,10 @@ src/
 │   ├── UndoBanner.jsx        # Undo after deleting a habit
 │   └── WeekAhead.jsx         # What is due over the next seven days
 ├── context/
-│   └── HabitContext.jsx      # Global state: add/delete/toggle, derived stats
+│   └── HabitContext.jsx      # HabitProvider: add/delete/toggle, derived stats
 ├── hooks/
 │   ├── useDocumentTitle.js   # Shows what is left today in the tab title
+│   ├── useHabits.js          # Habit context + hook for reading it
 │   ├── useLocalStorage.js    # Persists state to the browser
 │   └── useToday.js           # Today's date, updated across midnight
 ├── utils/
@@ -76,6 +77,7 @@ src/
 │   ├── dayNotes.js           # Storage for day notes
 │   ├── focusLog.js           # Today's focus minutes
 │   ├── habitFilters.js       # Rules behind each filter view
+│   ├── habitOptions.js       # Habit colours and the 'why' length limit
 │   ├── habitOrder.js         # Sort orders and manual ordering
 │   ├── habitSearch.js        # Search matching
 │   ├── iconMap.js            # Icon name → lucide component

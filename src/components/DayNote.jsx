@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PenLine } from 'lucide-react';
-import { useHabits } from '../context/HabitContext';
+import { useHabits } from '../hooks/useHabits';
 import { DAY_NOTE_LIMIT, noteFor } from '../utils/dayNotes';
 import { addDays } from '../utils/dateHelpers';
 

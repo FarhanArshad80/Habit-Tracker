@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useCallback, useState } from 'react';
+import { useMemo, useCallback, useState } from 'react';
+import { HabitContext } from '../hooks/useHabits';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { useToday } from '../hooks/useToday';
 import { perfectDayStats } from '../utils/perfectDays';
@@ -20,8 +21,6 @@ import {
 import { HABIT_COLORS, WHY_LIMIT } from '../utils/habitOptions';
 import { HABIT_ICONS } from '../utils/iconMap';
 import { capNote, normalizeNote, noteFor, sanitizeNotes, setNote } from '../utils/dayNotes';
-
-const HabitContext = createContext(null);
 
 function cleanWhy(why) {
   return typeof why === 'string' ? why.trim().slice(0, WHY_LIMIT) : '';
@@ -401,12 +400,4 @@ export function HabitProvider({ children }) {
       {children}
     </HabitContext.Provider>
   );
-}
-
-export function useHabits() {
-  const ctx = useContext(HabitContext);
-  if (!ctx) {
-    throw new Error('useHabits must be used within a HabitProvider');
-  }
-  return ctx;
 }

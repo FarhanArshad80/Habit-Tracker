@@ -3,7 +3,7 @@ import {
   addDays, isDue, weekdayLabel, dayNumber, formatFriendlyDate,
 } from '../utils/dateHelpers';
 import { weekdayRhythm } from '../utils/perfectDays';
-import { useHabits } from '../context/HabitContext';
+import { useHabits } from '../hooks/useHabits';
 
 // A week, starting today rather than on Monday. The question this answers is
 // "what is coming", and a calendar week that has already half gone spends

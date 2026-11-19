@@ -6,7 +6,7 @@ import {
   getLastNDays, formatFriendlyDate, isDue, isPausedOn, isSkippedOn,
   daysBetween, lastKeptDay,
 } from '../utils/dateHelpers';
-import { useHabits } from '../context/HabitContext';
+import { useHabits } from '../hooks/useHabits';
 import DayPicker from './DayPicker';
 
 const TRAIL_LENGTH = 14;

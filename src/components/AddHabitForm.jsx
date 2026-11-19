@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import { useHabits } from '../context/HabitContext';
+import { useHabits } from '../hooks/useHabits';
 import { HABIT_COLORS, WHY_LIMIT } from '../utils/habitOptions';
 import { HABIT_ICONS, resolveIcon } from '../utils/iconMap';
 import DayPicker from './DayPicker';
