@@ -8,3 +8,12 @@ export const HABIT_COLORS = [
   { id: 'sky', label: 'Sky', hex: '#38BDF8' },
   { id: 'lime', label: 'Lime', hex: '#A3E635' },
 ];
+
+// The reason the ritual is on the board at all.
+//
+// A name says what to do and nothing about why it is worth doing, and on a
+// bad Tuesday the why is the only part that argues for getting up. It is a
+// sentence rather than an essay — short enough to be read in the half second
+// somebody spends on the card before deciding, and short enough to sit on
+// one line next to the name.
+export const WHY_LIMIT = 80;

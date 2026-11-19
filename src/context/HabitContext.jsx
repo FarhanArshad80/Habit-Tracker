@@ -17,20 +17,11 @@ import {
   isScheduled,
   ALL_DAYS,
 } from '../utils/dateHelpers';
-import { HABIT_COLORS } from '../utils/habitOptions';
+import { HABIT_COLORS, WHY_LIMIT } from '../utils/habitOptions';
 import { HABIT_ICONS } from '../utils/iconMap';
 import { capNote, normalizeNote, noteFor, sanitizeNotes, setNote } from '../utils/dayNotes';
 
 const HabitContext = createContext(null);
-
-// The reason the ritual is on the board at all.
-//
-// A name says what to do and nothing about why it is worth doing, and on a
-// bad Tuesday the why is the only part that argues for getting up. It is a
-// sentence rather than an essay — short enough to be read in the half second
-// somebody spends on the card before deciding, and short enough to sit on
-// one line next to the name.
-export const WHY_LIMIT = 80;
 
 function cleanWhy(why) {
   return typeof why === 'string' ? why.trim().slice(0, WHY_LIMIT) : '';

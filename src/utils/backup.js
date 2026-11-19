@@ -1,6 +1,7 @@
 import { createId } from './ids';
 import { todayKey, normalizeSchedule, normalizePauses } from './dateHelpers';
 import { sanitizeNotes } from './dayNotes';
+import { WHY_LIMIT } from './habitOptions';
 
 // 5 adds the note kept against each day. 4 added the reason a ritual is on
 // the board. 3 added the days a ritual was set aside. Until now the export
@@ -12,9 +13,8 @@ export const BACKUP_VERSION = 5;
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
-// Kept in step with the form that writes it, so a hand-edited file cannot
+// The same limit as the form that writes it, so a hand-edited file cannot
 // put a paragraph on a card that has one line to render it in.
-const WHY_LIMIT = 80;
 
 export function backupFilename(date = new Date()) {
   const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
