@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Download, Upload, AlertTriangle, FileSpreadsheet } from 'lucide-react';
-import { HABIT_ICONS } from '../context/HabitContext';
+import { HABIT_ICONS } from '../utils/iconMap';
 import { HABIT_COLORS } from '../utils/habitOptions';
 import { backupFilename, parseBackup, serializeHabits } from '../utils/backup';
 import { habitsToCsv, spreadsheetFilename } from '../utils/spreadsheet';

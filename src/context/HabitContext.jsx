@@ -18,6 +18,7 @@ import {
   ALL_DAYS,
 } from '../utils/dateHelpers';
 import { HABIT_COLORS } from '../utils/habitOptions';
+import { HABIT_ICONS } from '../utils/iconMap';
 import { capNote, normalizeNote, noteFor, sanitizeNotes, setNote } from '../utils/dayNotes';
 
 const HabitContext = createContext(null);
@@ -45,12 +46,6 @@ function clampGoal(goal, schedule) {
 
   return Math.min(Math.round(asked), ceiling);
 }
-
-export const HABIT_ICONS = [
-  'BookOpen', 'Dumbbell', 'Droplet', 'Moon', 'Sun', 'Brain',
-  'Heart', 'Flame', 'Music', 'Code2', 'Leaf', 'Coffee',
-  'PenLine', 'Bike', 'Footprints', 'Sparkles',
-];
 
 export function HabitProvider({ children }) {
   const [habits, setHabits] = useLocalStorage('constellation.habits', []);

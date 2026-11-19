@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
-import { HABIT_ICONS, WHY_LIMIT, useHabits } from '../context/HabitContext';
+import { WHY_LIMIT, useHabits } from '../context/HabitContext';
 import { HABIT_COLORS } from '../utils/habitOptions';
-import { resolveIcon } from '../utils/iconMap';
+import { HABIT_ICONS, resolveIcon } from '../utils/iconMap';
 import DayPicker from './DayPicker';
 import { ALL_DAYS } from '../utils/dateHelpers';
 

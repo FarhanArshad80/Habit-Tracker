@@ -8,6 +8,9 @@ export const ICON_COMPONENTS = {
   Music, Code2, Leaf, Coffee, PenLine, Bike, Footprints, Sparkles,
 };
 
+// The icon names a ritual can carry, in the order the pickers show them.
+export const HABIT_ICONS = Object.keys(ICON_COMPONENTS);
+
 export function resolveIcon(name) {
   return ICON_COMPONENTS[name] || Sparkles;
 }
