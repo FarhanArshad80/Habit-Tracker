@@ -16,10 +16,6 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
-<<<<<<< HEAD
-=======
-
->>>>>>> 06a5391 (feat: complete React project files)
 .DS_Store
 *.suo
 *.ntvs*
